@@ -22,6 +22,12 @@
   // Request providers immediately to catch any that have already injected
   window.dispatchEvent(new Event('eip6963:requestProvider'));
 </script>
+<script type="module">
+  import { AppKit } from "@circle-fin/app-kit";
+  import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
+  window.AppKit = AppKit;
+  window.createViemAdapterFromProvider = createViemAdapterFromProvider;
+</script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arclance | Home</title>
@@ -2601,7 +2607,7 @@ const TxManager = (() => {
   // ── FX Escrow / StableFX contract (Arc Testnet) — uses RFQ settlement via Circle App Kit SDK ──
   const FX_ESCROW = '0x867650F5eAe8df91445971f14d89fd84F0C9a9f8';
   // KIT_KEY required by Circle App Kit SDK
-  const KIT_KEY = 'KIT_KEY:d2d7666c02a61b07e312f19147d9fc2b:a3250919a5e567fa89b091ee2a946b92';
+  const KIT_KEY = 'KIT_KEY:5c33d3d4841596e26ef894df00ca75a9:ae7ad7c0eabe0554050b7c0844c86fdd';
 
   // Poll eth_getTransactionReceipt until mined or timeout
   async function _waitForReceipt(provider, txHash, maxWaitMs = 120000) {
@@ -2696,82 +2702,56 @@ const TxManager = (() => {
       return await _sendTokenTx(provider, contract, to, parseFloat(amount));
     },
 
-    // ── SWAP — Direct FxEscrow contract call via EIP-1193 (no SDK required) ──
-    // FxEscrow: 0x867650F5eAe8df91445971f14d89fd84F0C9a9f8 (Arc Testnet, docs.arc.io)
-    // Function: swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin, address recipient)
-    // Selector: keccak256('swap(address,address,uint256,uint256,address)') = 0xd5bcb9b5
+    // ── SWAP — Using official Circle App Kit SDK ──
     swap: async ({ tokenIn, tokenOut, amountIn, onStatus }) => {
       const provider = WalletManager.getProvider() || window.ethereum;
       if (!provider) throw new Error('No wallet connected.');
-      const addr = WalletState.getAddr();
-      if (!addr) throw new Error('No wallet address found.');
 
-      if (!TOKEN_CONTRACTS[tokenIn])  throw new Error(`Unsupported tokenIn: ${tokenIn}`);
-      if (!TOKEN_CONTRACTS[tokenOut]) throw new Error(`Unsupported tokenOut: ${tokenOut}`);
-
-      const tokenInAddr   = TOKEN_CONTRACTS[tokenIn];
-      const tokenOutAddr  = TOKEN_CONTRACTS[tokenOut];
-      const amountBig     = BigInt(Math.round(parseFloat(amountIn) * 1e6));
-      const amountMinBig  = BigInt(0); // no slippage floor on testnet
-      const MAX_UINT256   = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-
-      const ownerPadded  = addr.replace('0x','').toLowerCase().padStart(64,'0');
-      const escrowPadded = FX_ESCROW.replace('0x','').toLowerCase().padStart(64,'0');
-
-      // Step 1: Check allowance of tokenIn for FxEscrow
-      if (onStatus) onStatus('Checking allowance…');
-      let currentAllowance = BigInt(0);
-      try {
-        const allowanceCall = '0xdd62ed3e' + ownerPadded + escrowPadded;
-        const res = await provider.request({
-          method: 'eth_call',
-          params: [{ to: tokenInAddr, data: allowanceCall }, 'latest']
-        });
-        if (res && res !== '0x' && res !== '0x0') currentAllowance = BigInt(res);
-      } catch(_) {}
-
-      // Step 2: Approve FxEscrow for maxUint256 if allowance is insufficient
-      if (currentAllowance < amountBig) {
-        if (onStatus) onStatus('Approving token…');
-        const approveTxHash = await provider.request({
-          method: 'eth_sendTransaction',
-          params: [{ from: addr, to: tokenInAddr, data: '0x095ea7b3' + escrowPadded + MAX_UINT256, value: '0x0' }]
-        });
-        if (onStatus) onStatus('Waiting for approval confirmation…');
-        await _waitForReceipt(provider, approveTxHash);
+      if (!window.AppKit || !window.createViemAdapterFromProvider) {
+        throw new Error('Circle App Kit SDK is not fully loaded yet. Please try again.');
       }
 
-      // Step 3: Call FxEscrow.swap(tokenIn, tokenOut, amountIn, amountOutMin, recipient)
-      if (onStatus) onStatus('Submitting swap…');
-      const tokenInPadded   = tokenInAddr.replace('0x','').toLowerCase().padStart(64,'0');
-      const tokenOutPadded  = tokenOutAddr.replace('0x','').toLowerCase().padStart(64,'0');
-      const amountInHex     = amountBig.toString(16).padStart(64,'0');
-      const amountMinHex    = amountMinBig.toString(16).padStart(64,'0');
-      const recipientPadded = addr.replace('0x','').toLowerCase().padStart(64,'0');
-      const swapData = '0xd5bcb9b5'
-        + tokenInPadded
-        + tokenOutPadded
-        + amountInHex
-        + amountMinHex
-        + recipientPadded;
-
-      console.log('[Swap] Calling FxEscrow.swap()…', { tokenIn, tokenOut, amountIn, selector: '0xd5bcb9b5' });
-      const swapTxHash = await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: addr, to: FX_ESCROW, data: swapData, value: '0x0' }]
+      if (onStatus) onStatus('Initializing SDK...');
+      const kitInstance = new window.AppKit();
+      const adapter = await window.createViemAdapterFromProvider({
+        provider: provider,
       });
 
-      // Step 4: Poll eth_getTransactionReceipt until mined
-      if (onStatus) onStatus('Confirming on-chain…');
-      const receipt = await _waitForReceipt(provider, swapTxHash);
+      if (onStatus) onStatus('Submitting swap via App Kit...');
+      const result = await kitInstance.swap({
+        from: { adapter, chain: "Arc_Testnet" },
+        tokenIn,
+        tokenOut,
+        amountIn: amountIn,
+        config: {
+          kitKey: "KIT_KEY:5c33d3d4841596e26ef894df00ca75a9:ae7ad7c0eabe0554050b7c0844c86fdd",
+        },
+      });
 
-      // Step 5: Only report success after receipt.status === '0x1'
-      if (receipt.status === '0x0' || receipt.status === 0) {
-        throw new Error('Swap reverted on-chain (status 0x0). No changes recorded.');
+      console.log('[AppKit Swap Result]', result);
+
+      if (result.state === 'error') {
+        const failedStep = result.steps?.find(s => s.state === 'error' || s.error);
+        const errMsg = failedStep ? `${failedStep.name} failed: ${failedStep.error}` : 'Swap failed.';
+        throw new Error(errMsg);
+      }
+
+      // Find the transaction hash from the completed steps
+      let swapTxHash = null;
+      if (result.steps) {
+        for (let i = result.steps.length - 1; i >= 0; i--) {
+          if (result.steps[i].txHash) {
+            swapTxHash = result.steps[i].txHash;
+            break;
+          }
+        }
+      }
+
+      if (!swapTxHash) {
+        throw new Error('No transaction hash returned from App Kit Swap.');
       }
 
       const amountOut = calcSwapAmount(tokenIn, tokenOut, parseFloat(amountIn));
-      console.log('[Swap] ✅ FxEscrow swap confirmed on-chain:', swapTxHash);
       return {
         txHash:      swapTxHash,
         amountOut:   amountOut.toFixed(6),
@@ -2779,57 +2759,58 @@ const TxManager = (() => {
       };
     },
 
-    // ── BRIDGE — raw CCTP depositForBurn fallback ──
+    // ── BRIDGE — Using official Circle App Kit SDK ──
     bridge: async ({ amount, token }) => {
       const provider = WalletManager.getProvider() || window.ethereum;
       if (!provider) throw new Error('No wallet provider found.');
-      const addr = WalletState.getAddr();
-      if (!addr) throw new Error('No wallet address found.');
 
-      const isDir1 = (window.bridgeDirection || 1) === 1; // 1 = Arc→Sepolia, 2 = Sepolia→Arc
-
-      // Fallback: raw CCTP depositForBurn
-      console.log('[AppKit] bridge() via raw CCTP fallback');
-      const MESSENGER = '0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA';
-      const BRIDGE_CONTRACTS = {
-        USDC: '0x3600000000000000000000000000000000000000',
-        EURC: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a'
-      };
-      const tokenContract   = BRIDGE_CONTRACTS[token] || BRIDGE_CONTRACTS.USDC;
-      const amountBig       = BigInt(Math.round(parseFloat(amount) * 1e6));
-      const amountHex       = amountBig.toString(16).padStart(64, '0');
-      const messengerPadded = MESSENGER.replace('0x','').toLowerCase().padStart(64,'0');
-
-      // Check & approve if needed
-      const allowanceData = '0xdd62ed3e'
-        + addr.replace('0x','').toLowerCase().padStart(64,'0')
-        + messengerPadded;
-      let currentAllowance = BigInt(0);
-      try {
-        const allowRes = await provider.request({ method: 'eth_call', params: [{ to: tokenContract, data: allowanceData }, 'latest'] });
-        if (allowRes && allowRes !== '0x' && allowRes !== '0x0') currentAllowance = BigInt(allowRes);
-      } catch(_) {}
-
-      if (currentAllowance < amountBig) {
-        const maxApproval = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-        await provider.request({
-          method: 'eth_sendTransaction',
-          params: [{ from: addr, to: tokenContract, data: '0x095ea7b3' + messengerPadded + maxApproval, value: '0x0' }]
-        });
-        await new Promise(r => setTimeout(r, 2000));
+      if (!window.AppKit || !window.createViemAdapterFromProvider) {
+        throw new Error('Circle App Kit SDK is not fully loaded yet. Please try again.');
       }
 
-      // depositForBurn — Arc domain=26, Sepolia domain=0
-      const destDomain  = isDir1 ? 0 : 26;
-      const domainHex   = BigInt(destDomain).toString(16).padStart(64,'0');
-      const recipient   = addr.replace('0x','').toLowerCase().padStart(64,'0');
-      const burnToken   = tokenContract.replace('0x','').toLowerCase().padStart(64,'0');
-      const depositData = '0x6fd3504e' + amountHex + domainHex + recipient + burnToken;
+      const isDir1 = (window.bridgeDirection || 1) === 1; // 1 = Arc→Sepolia, 2 = Sepolia→Arc
+      const srcChainName = isDir1 ? "Arc_Testnet" : "Ethereum_Sepolia";
+      const destChainName = isDir1 ? "Ethereum_Sepolia" : "Arc_Testnet";
 
-      return await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: addr, to: MESSENGER, data: depositData, value: '0x0' }]
+      const kitInstance = new window.AppKit();
+      const adapter = await window.createViemAdapterFromProvider({
+        provider: provider,
       });
+
+      const result = await kitInstance.bridge({
+        from: { adapter, chain: srcChainName },
+        to: { adapter, chain: destChainName },
+        amount: amount,
+        token: token,
+        config: {
+          kitKey: "KIT_KEY:5c33d3d4841596e26ef894df00ca75a9:ae7ad7c0eabe0554050b7c0844c86fdd",
+        },
+      });
+
+      console.log('[AppKit Bridge Result]', result);
+
+      if (result.state === 'error') {
+        const failedStep = result.steps?.find(s => s.state === 'error' || s.error);
+        const errMsg = failedStep ? `${failedStep.name} failed: ${failedStep.error}` : 'Bridge failed.';
+        throw new Error(errMsg);
+      }
+
+      // Find the transaction hash from the completed steps
+      let bridgeTxHash = null;
+      if (result.steps) {
+        for (let i = result.steps.length - 1; i >= 0; i--) {
+          if (result.steps[i].txHash) {
+            bridgeTxHash = result.steps[i].txHash;
+            break;
+          }
+        }
+      }
+
+      if (!bridgeTxHash) {
+        throw new Error('No transaction hash returned from App Kit Bridge.');
+      }
+
+      return bridgeTxHash;
     },
   };
 
