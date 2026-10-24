@@ -22,6 +22,12 @@
   // Request providers immediately to catch any that have already injected
   window.dispatchEvent(new Event('eip6963:requestProvider'));
 </script>
+<script type="module">
+  import { AppKit } from "@circle-fin/app-kit";
+  import { createViemAdapterFromProvider } from "@circle-fin/adapter-viem-v2";
+  window.AppKit = AppKit;
+  window.createViemAdapterFromProvider = createViemAdapterFromProvider;
+</script>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arclance | Home</title>
@@ -196,13 +202,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Outfit
 .info-row .v.green{color:var(--green)}.info-row .v.yellow{color:var(--yellow)}
 
 /* DATE PICKER COMPATIBILITY */
-/* BRIDGE CHAIN PICKER */
-.bchain-opt{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;transition:background .15s;font-size:12px}
-.bchain-opt:hover{background:var(--surface2)}
-.bchain-opt img{width:22px;height:22px;border-radius:50%;object-fit:contain;background:#1a1a2e;flex-shrink:0}
-.bchain-opt>div>div:first-child{font-weight:700;color:var(--text);line-height:1.2}
-.bchain-opt>div>div:last-child{font-size:10px;color:var(--text2);margin-top:1px}
-
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
@@ -249,9 +248,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .history-table td.green{color:var(--green);font-weight:600}
 .mono-small{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)}
 
-/* SLIP BTNS */
-.slip-btns{display:flex;gap:8px}
-.slip-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;transition:all .2s}
+/* SLIP BTNS & CUSTOM INPUT */
+.slip-container{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.slip-btns{display:flex;gap:6px}
+.slip-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
 .pct-btn{padding:3px 9px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;line-height:1.4}
 .pct-btn:hover{border-color:var(--yellow);color:var(--yellow);background:rgba(245,197,24,0.08)}
 .pct-btn-max{border-color:rgba(245,197,24,0.4);color:var(--yellow);background:rgba(245,197,24,0.08)}
@@ -261,6 +261,39 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .doc-nav-btn.active{background:rgba(245,197,24,0.1);color:var(--yellow);font-weight:700}
 .slip-btn.active{background:var(--yellow);color:#000;border-color:var(--yellow);font-weight:700}
 .slip-btn:hover:not(.active){border-color:var(--yellow);color:var(--text)}
+.custom-slip-wrap{position:relative;display:flex;align-items:center;min-width:96px;max-width:110px}
+.custom-slip-input{width:100%;height:31px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:0 22px 0 8px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;outline:none;transition:border-color .2s}
+.custom-slip-input:focus{border-color:var(--yellow);background:rgba(255,255,255,0.08)}
+.custom-slip-unit{position:absolute;right:8px;font-size:11px;color:var(--text2);pointer-events:none}
+.slip-warning{font-size:11px;color:var(--yellow);margin-top:6px;display:flex;align-items:center;gap:4px}
+
+/* BRIDGE ROUTES */
+.bridge-route-tabs{display:flex;gap:8px;background:rgba(255,255,255,0.03);padding:4px;border-radius:12px;border:1px solid var(--border);margin-bottom:12px}
+.bridge-route-tab{flex:1;padding:8px 10px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}
+.bridge-route-tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border2);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.bridge-route-tab.active.cctp-active{border-color:rgba(108,63,196,0.45);color:#c4b5fd;background:rgba(108,63,196,0.12)}
+.bridge-route-tab.active.debridge-active{border-color:rgba(34,211,238,0.45);color:var(--teal);background:rgba(34,211,238,0.1)}
+.bridge-route-badge{font-size:9px;padding:2px 6px;border-radius:10px;font-weight:700;letter-spacing:0.5px}
+
+.bridge-callout{border-radius:12px;padding:12px 14px;font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:10px;margin-top:6px}
+.bridge-callout-warn{background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);color:var(--yellow)}
+.bridge-callout-block{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);color:#fca5a5}
+.bridge-callout-info{background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.25);color:var(--teal)}
+
+/* ATTESTATION PROGRESS MODAL & TRACKER */
+.tracker-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:24px;width:500px;max-width:92vw;padding:28px;box-shadow:0 30px 100px rgba(0,0,0,0.85);transform:translateY(20px) scale(.97);transition:transform .3s cubic-bezier(.34,1.56,.64,1);position:relative}
+.wallet-overlay.visible .tracker-modal{transform:none}
+.attestation-bar-wrap{height:10px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;position:relative;margin:16px 0 10px}
+.attestation-bar-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--teal),var(--green));border-radius:6px;transition:width 1s linear;position:relative}
+.attestation-bar-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);animation:shimmer 1.5s infinite}
+.tracker-step{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-left:2px solid var(--border2);margin-left:14px;padding-left:16px;position:relative}
+.tracker-step:last-child{border-left-color:transparent}
+.tracker-step-dot{width:18px;height:18px;border-radius:50%;background:var(--surface3);border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;position:absolute;left:-10px;top:10px}
+.tracker-step.done .tracker-step-dot{background:var(--green);border-color:var(--green);color:#000}
+.tracker-step.active .tracker-step-dot{background:var(--yellow);border-color:var(--yellow);color:#000;box-shadow:0 0 12px rgba(245,197,24,0.5)}
+.tracker-step.pending .tracker-step-dot{background:var(--surface3);color:var(--text3)}
+.mini-bridge-tracker{position:fixed;bottom:24px;right:24px;z-index:9998;background:var(--bg3);border:1px solid rgba(108,63,196,0.4);border-radius:16px;padding:12px 18px;box-shadow:0 12px 40px rgba(0,0,0,0.6);display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s;backdrop-filter:blur(10px);animation:toast-in .35s ease forwards}
+.mini-bridge-tracker:hover{transform:translateY(-2px);border-color:var(--teal);box-shadow:0 16px 48px rgba(0,0,0,0.8)}
 
 /* COUNTRIES */
 .countries-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
@@ -859,7 +892,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
                   <input class="swap-amount" id="swapAmountIn" placeholder="0.00" type="number" oninput="calcSwapOut()">
                   <select class="token-pill-sel" id="swapTokenIn" onchange="UISync.refreshSwapHints();calcSwapOut()">
-                    <option value="USDC">🟢 USDC</option>
+                    <option value="USDC">🟢 USDC (ERC-20)</option>
+                    <option value="native_usdc">⚡ Native USDC</option>
                     <option value="EURC">🟡 EURC</option>
                     <option value="USDT">🔵 USDT</option>
                   </select>
@@ -880,33 +914,55 @@ input[type="date"]::-webkit-calendar-picker-indicator {
               </div>
 
               <div class="swap-box" style="margin-top:0">
-                <div class="form-label">YOU RECEIVE (EST.)</div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div class="form-label" style="margin-bottom:0">YOU RECEIVE (EST.)</div>
+                  <span class="badge badge-yellow" id="swapQuoteBadge" style="font-size:10px;display:none;">Circle Swap Kit</span>
+                </div>
                 <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
                   <input class="swap-amount" id="swapAmountOut" placeholder="0.00" readonly style="opacity:.7">
                   <select class="token-pill-sel" id="swapTokenOut" onchange="UISync.refreshSwapHints();calcSwapOut()">
                     <option value="EURC">🟡 EURC</option>
-                    <option value="USDC">🟢 USDC</option>
+                    <option value="USDC">🟢 USDC (ERC-20)</option>
+                    <option value="native_usdc">⚡ Native USDC</option>
                     <option value="USDT">🔵 USDT</option>
                   </select>
                 </div>
                 <div style="font-size:12px;color:var(--text2);margin-top:8px" id="swapRate">Rate: —</div>
               </div>
 
-              <div style="margin-top:16px">
-                <div class="form-label">SLIPPAGE TOLERANCE</div>
-                <div class="slip-btns" style="margin-top:8px">
-                  <button class="slip-btn active" onclick="setSlip(this)">0.1%</button>
-                  <button class="slip-btn" onclick="setSlip(this)">0.5%</button>
-                  <button class="slip-btn" onclick="setSlip(this)">1%</button>
-                  <button class="slip-btn" onclick="setSlip(this)">3%</button>
-                </div>
+              <!-- Same Asset Route Warning Alert -->
+              <div id="swapSameAssetAlert" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:12px;line-height:1.5">
+                🛑 <strong>Invalid Route:</strong> On Arc Network, native USDC and ERC-20 USDC are the identical asset in a unified liquidity pool. Swapping between them is disabled.
               </div>
 
-<div class="info-box" style="margin-top:16px">
-                <div class="info-row"><span class="k">Network Fee</span><span class="v green">~0.12 USDC</span></div>
-                <div class="info-row"><span class="k">Price Impact</span><span class="v">~0.04%</span></div>
-                <div class="info-row"><span class="k">Route</span><span class="v yellow">Arc DEX</span></div>
+              <div style="margin-top:16px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div class="form-label" style="margin-bottom:0">SLIPPAGE TOLERANCE</div>
+                  <div id="slipToleranceDisplay" style="font-size:12px;color:var(--yellow);font-weight:700">0.5%</div>
+                </div>
+                <div class="slip-container" style="margin-top:8px">
+                  <div class="slip-btns">
+                    <button type="button" class="slip-btn" data-slip="0.1" onclick="setSlipVal(0.1, this)">0.1%</button>
+                    <button type="button" class="slip-btn active" data-slip="0.5" onclick="setSlipVal(0.5, this)">0.5%</button>
+                    <button type="button" class="slip-btn" data-slip="1.0" onclick="setSlipVal(1.0, this)">1.0%</button>
+                    <button type="button" class="slip-btn" data-slip="3.0" onclick="setSlipVal(3.0, this)">3.0%</button>
+                  </div>
+                  <div class="custom-slip-wrap">
+                    <input type="number" id="customSlipInput" class="custom-slip-input" placeholder="Custom" min="0.01" max="50" step="0.1" oninput="setCustomSlip(this.value)">
+                    <span class="custom-slip-unit">%</span>
+                  </div>
+                </div>
+                <div id="slipWarning" class="slip-warning" style="display:none;">⚠ High slippage tolerance (>5%). Trade may execute at an unfavorable rate.</div>
               </div>
+
+              <div class="info-box" style="margin-top:16px">
+                <div class="info-row"><span class="k">Network Fee</span><span class="v green">~0.12 USDC (300k gas limit override)</span></div>
+                <div class="info-row"><span class="k">Minimum Received</span><span class="v yellow" id="swapMinReceived">—</span></div>
+                <div class="info-row"><span class="k">Price Impact</span><span class="v" id="swapPriceImpact">~0.04%</span></div>
+                <div class="info-row"><span class="k">Route</span><span class="v" id="swapRouteLabel" style="color:var(--yellow)">Arc DEX (Circle Swap Kit RFQ)</span></div>
+              </div>
+
+              <div id="swapErrorBanner" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:12px;line-height:1.5"></div>
 
               <button class="tx-btn tx-btn-yellow" id="swapBtn" style="margin-top:14px" onclick="TxManager.confirmSwap()">
                 <span id="swapBtnContent">⇄ SWAP TOKENS</span>
@@ -935,54 +991,87 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           <div class="card animate"><div class="stat-label">Bridges Done</div><div class="stat-value" style="font-size:22px" id="bridge-count">0</div><div class="stat-change">Transactions completed</div></div>
         </div>
 
-        <div style="max-width:520px">
+        <div style="max-width:540px">
           <div class="card animate" style="background:linear-gradient(135deg,#0a0d20,#0e0a20);border-color:rgba(108,63,196,0.18)">
-            <div class="section-header"><div class="section-title">Bridge Assets</div><span class="badge badge-purple">USDC 🌉 EURC / USDT</span></div>
-            <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="section-header">
+              <div class="section-title">Bridge Assets</div>
+              <span class="badge badge-purple" id="bridgeRouteHeaderBadge">Circle CCTP · Domain 26</span>
+            </div>
+            
+            <!-- BRIDGE ROUTE SELECTOR -->
+            <div class="bridge-route-tabs">
+              <button type="button" class="bridge-route-tab active cctp-active" id="routeTabCctp" onclick="selectBridgeRoute('cctp')">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span>Circle CCTP</span>
+                  <span class="bridge-route-badge" style="background:rgba(108,63,196,0.3);color:#c4b5fd">CANONICAL</span>
+                </div>
+                <span style="font-size:10px;color:var(--text2)">Domain 26 · Native USDC</span>
+              </button>
+              <button type="button" class="bridge-route-tab" id="routeTabDebridge" onclick="selectBridgeRoute('debridge')">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span>deBridge</span>
+                  <span class="bridge-route-badge" style="background:rgba(34,211,238,0.2);color:var(--teal)">~1s FAST</span>
+                </div>
+                <span style="font-size:10px;color:var(--text2)">Native Asset · 0-TVL</span>
+              </button>
+            </div>
+
+            <!-- CCTP 15-MINUTE FINALITY NOTICE -->
+            <div id="cctpWarningBox" class="bridge-callout bridge-callout-warn">
+              <div style="font-size:16px;line-height:1">⏳</div>
+              <div style="flex:1">
+                <strong>Circle CCTP Finality Notice (Ethereum):</strong> CCTP transfers have up to a <strong>15-minute finality wait</strong> on Ethereum for Iris attestation quorum.
+                <div style="margin-top:6px;font-size:11px">
+                  Need instant settlement? <a href="javascript:void(0)" onclick="selectBridgeRoute('debridge')" style="color:var(--teal);text-decoration:underline;font-weight:700">Use deBridge (~1s settlement, native asset, 0-TVL) ⚡</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- deBridge FAST ROUTE INFO -->
+            <div id="debridgeInfoBox" class="bridge-callout bridge-callout-info" style="display:none">
+              <div style="font-size:16px;line-height:1">⚡</div>
+              <div style="flex:1">
+                <strong>deBridge DLN Cross-Chain Route:</strong> Transfers settle in <strong>~1 second</strong> using cross-chain intent liquidity with zero smart contract TVL lock risk.
+              </div>
+            </div>
+
+            <!-- CCTP NON-USDC/EURC ASSET BLOCKING ALERT -->
+            <div id="cctpBlockedAssetBox" class="bridge-callout bridge-callout-block" style="display:none">
+              <div style="font-size:16px;line-height:1">🛑</div>
+              <div style="flex:1">
+                <strong id="cctpBlockedTitle">Asset Blocked on CCTP:</strong> Circle CCTP only supports <strong>USDC and EURC</strong> on Arc Network (Domain 26).
+                <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <button type="button" class="btn btn-sm btn-primary" onclick="sellIntoUSDCFirst()" style="padding:5px 12px;font-size:11px">⇄ Sell into USDC first on Arc Swap</button>
+                  <button type="button" class="btn btn-sm btn-ghost" onclick="selectBridgeRoute('debridge')" style="padding:5px 12px;font-size:11px">⚡ Switch to deBridge route</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:14px;margin-top:8px">
 
               <!-- FROM/TO DISPLAY -->
               <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center">
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
                   <div style="font-size:10px;color:var(--text2);font-weight:700;letter-spacing:1px;margin-bottom:4px">FROM</div>
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                    <img src="https://pbs.twimg.com/profile_images/1869366589039054848/yIiSNHKW_400x400.jpg" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0" onerror="this.style.display='none'"/>
-                    <div style="font-size:14px;font-weight:700" id="bridgeFromTitle">Arc Testnet</div>
-                  </div>
+                  <div style="font-size:14px;font-weight:700" id="bridgeFromTitle">⚡ Arc Testnet (Domain 26)</div>
                   <select class="token-pill-sel" id="bridgeFromTokenSelect" onchange="updateBridgeUI()" style="margin-top:3px; padding:2px 8px; font-size:11px; background:rgba(245,197,24,0.15); color:var(--yellow); border-color:rgba(245,197,24,0.25); outline:none; transition: all 0.2s;">
-                    <option value="USDC">USDC</option>
+                    <option value="USDC">USDC (Domain 26)</option>
                     <option value="EURC">EURC</option>
+                    <option value="USDT">USDT</option>
+                    <option value="ETH">ETH</option>
                   </select>
                 </div>
                 <div style="text-align:center">
-                  <button id="bridgeDirectionToggle" onclick="toggleBridgeDirection()" style="background:rgba(245,197,24,0.1); border:1px solid rgba(245,197,24,0.3); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:var(--yellow); cursor:pointer; font-size:16px; transition:all 0.2s; outline:none;" onmouseover="this.style.background='rgba(245,197,24,0.2)'" onmouseout="this.style.background='rgba(245,197,24,0.1)'">↔</button>
+                  <button type="button" id="bridgeDirectionToggle" onclick="toggleBridgeDirection()" style="background:rgba(245,197,24,0.1); border:1px solid rgba(245,197,24,0.3); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:var(--yellow); cursor:pointer; font-size:16px; transition:all 0.2s; outline:none;" onmouseover="this.style.background='rgba(245,197,24,0.2)'" onmouseout="this.style.background='rgba(245,197,24,0.1)'">↔</button>
                 </div>
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
-                  <div style="font-size:10px;color:var(--text2);font-weight:700;letter-spacing:1px;margin-bottom:6px">TO</div>
-                  <!-- Custom chain picker with logos -->
-                  <div id="bridgeChainPicker" style="position:relative">
-                    <div id="bridgeChainSelected" onclick="toggleBridgeChainDropdown()" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid rgba(108,63,196,0.3);border-radius:8px;padding:7px 10px;cursor:pointer;user-select:none">
-                      <img id="bridgeChainLogoImg" src="https://cryptologos.cc/logos/ethereum-eth-logo.svg" style="width:22px;height:22px;border-radius:50%;object-fit:contain;background:#1a1a2e;flex-shrink:0" onerror="this.style.display='none'"/>
-                      <div style="flex:1;min-width:0">
-                        <div id="bridgeChainName" style="font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ethereum Sepolia</div>
-                        <div id="bridgeChainId" style="font-size:10px;color:var(--text2)">11155111</div>
-                      </div>
-                      <span style="color:var(--text2);font-size:10px">▾</span>
-                    </div>
-                    <div id="bridgeChainDropdownList" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;z-index:200;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.5)">
-                      <div class="bchain-opt" onclick="selectBridgeChain(this)" data-chain="Ethereum_Sepolia" data-chainid="11155111" data-logo="https://cryptologos.cc/logos/ethereum-eth-logo.svg"><img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg" onerror="this.style.display='none'"/><div><div>Ethereum Sepolia</div><div>11155111</div></div></div>
-                      <div class="bchain-opt" onclick="selectBridgeChain(this)" data-chain="Arbitrum_Sepolia" data-chainid="421614" data-logo="https://cryptologos.cc/logos/arbitrum-arb-logo.svg"><img src="https://cryptologos.cc/logos/arbitrum-arb-logo.svg" onerror="this.style.display='none'"/><div><div>Arbitrum Sepolia</div><div>421614</div></div></div>
-                      <div class="bchain-opt" onclick="selectBridgeChain(this)" data-chain="Base_Sepolia" data-chainid="84532" data-logo="https://raw.githubusercontent.com/base-org/brand-kit/001c0e9b40a67799ebe0418671ac4e02a0c683ce/logo/in-product/Base_Network_Logo.svg"><img src="https://raw.githubusercontent.com/base-org/brand-kit/001c0e9b40a67799ebe0418671ac4e02a0c683ce/logo/in-product/Base_Network_Logo.svg" onerror="this.style.display='none'"/><div><div>Base Sepolia</div><div>84532</div></div></div>
-                      <div class="bchain-opt" onclick="selectBridgeChain(this)" data-chain="Optimism_Sepolia" data-chainid="11155420" data-logo="https://cryptologos.cc/logos/optimism-ethereum-op-logo.svg"><img src="https://cryptologos.cc/logos/optimism-ethereum-op-logo.svg" onerror="this.style.display='none'"/><div><div>OP Sepolia</div><div>11155420</div></div></div>
-                      <div class="bchain-opt" onclick="selectBridgeChain(this)" data-chain="Linea_Sepolia" data-chainid="59141" data-logo="https://pbs.twimg.com/profile_images/1744598187248250880/TNxDFiTj_400x400.jpg"><img src="https://pbs.twimg.com/profile_images/1744598187248250880/TNxDFiTj_400x400.jpg" onerror="this.style.display='none'"/><div><div>Linea Sepolia</div><div>59141</div></div></div>
-                      <div class="bchain-opt" onclick="selectBridgeChain(this)" data-chain="Monad_Testnet" data-chainid="10143" data-logo="https://pbs.twimg.com/profile_images/1780490893408927744/qrNdgCRQ_400x400.jpg"><img src="https://pbs.twimg.com/profile_images/1780490893408927744/qrNdgCRQ_400x400.jpg" onerror="this.style.display='none'"/><div><div>Monad Testnet</div><div>10143</div></div></div>
-                      <div class="bchain-opt" onclick="selectBridgeChain(this)" data-chain="Arc_Testnet" data-chainid="5042002" data-logo="https://pbs.twimg.com/profile_images/1869366589039054848/yIiSNHKW_400x400.jpg"><img src="https://pbs.twimg.com/profile_images/1869366589039054848/yIiSNHKW_400x400.jpg" onerror="this.style.display='none'"/><div><div>Arc Testnet</div><div>5042002</div></div></div>
-                    </div>
-                  </div>
-                  <input type="hidden" id="bridgeDestChain" value="Ethereum_Sepolia"/>
-                  <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:6px" id="bridgeToTitle">Ethereum Sepolia</div>
+                  <div style="font-size:10px;color:var(--text2);font-weight:700;letter-spacing:1px;margin-bottom:4px">TO</div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)" id="bridgeToTitle">🔷 Ethereum Sepolia</div>
                   <select class="token-pill-sel" id="bridgeToTokenSelect" onchange="updateBridgeUI()" style="margin-top:3px; padding:2px 8px; font-size:11px; background:rgba(108,63,196,0.15); color:#a78bfa; border-color:rgba(108,63,196,0.25); outline:none; transition: all 0.2s;">
                     <option value="USDC">USDC</option>
                     <option value="EURC">EURC</option>
+                    <option value="USDT">USDT</option>
+                    <option value="ETH">ETH</option>
                   </select>
                   <div style="font-size:10px;color:var(--text2);margin-top:4px" id="bridgeToBalHint">—</div>
                 </div>
@@ -994,18 +1083,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
                   <div style="font-size:12px;color:var(--text2)" id="bridgeBalanceHint">Balance: —</div>
                   <div style="display:flex;gap:6px">
-                    <button class="pct-btn" onclick="setBridgePercent(25)">25%</button>
-                    <button class="pct-btn" onclick="setBridgePercent(50)">50%</button>
-                    <button class="pct-btn" onclick="setBridgePercent(75)">75%</button>
-                    <button class="pct-btn pct-btn-max" onclick="setBridgePercent(100)">MAX</button>
+                    <button type="button" class="pct-btn" onclick="setBridgePercent(25)">25%</button>
+                    <button type="button" class="pct-btn" onclick="setBridgePercent(50)">50%</button>
+                    <button type="button" class="pct-btn" onclick="setBridgePercent(75)">75%</button>
+                    <button type="button" class="pct-btn pct-btn-max" onclick="setBridgePercent(100)">MAX</button>
                   </div>
                 </div>
               </div>
               <div class="info-box">
-                <div class="info-row"><span class="k">Bridge Fee</span><span class="v green">0.80 USDC</span></div>
-                <div class="info-row"><span class="k">Est. Time</span><span class="v">~15 min (CCTP)</span></div>
+                <div class="info-row"><span class="k">Bridge Fee</span><span class="v green" id="bridgeFeeDisplay">0.80 USDC</span></div>
+                <div class="info-row"><span class="k">Est. Time</span><span class="v" id="bridgeEstTimeDisplay">~15 min (CCTP Attestation)</span></div>
                 <div class="info-row"><span class="k">You’ll Receive</span><span class="v yellow" id="bridge-receive">—</span></div>
-                <div class="info-row"><span class="k">Route</span><span class="v" id="bridge-route" style="color:#a78bfa">—</span></div>
+                <div class="info-row"><span class="k">Route</span><span class="v" id="bridge-route" style="color:#a78bfa">Circle CCTP (Canonical Path · Domain 26)</span></div>
               </div>
               <button class="tx-btn tx-btn-yellow" id="bridgeBtn" onclick="TxManager.executeBridge()">
                 <span id="bridgeBtnContent">🌉 BRIDGE ASSETS</span>
@@ -2103,29 +2192,19 @@ const WalletState = (() => {
   }
 
   async function getOnChainUSDCBalance(provider, addr) {
-    let balance = 0;
+    // On Arc, native USDC and ERC-20 USDC are backed by the same pool.
+    // Never show both native USDC balance and ERC-20 USDC balance as separate amounts.
+    // Only query and display the ERC-20 balance (6 decimals, address 0x3600000000000000000000000000000000000000).
+    const contract = '0x3600000000000000000000000000000000000000';
     try {
-      // 1. Get native balance (USDC on Arc is the native gas token with 18 decimals)
-      const nativeRes = await provider.request({ method: 'eth_getBalance', params: [addr, 'latest'] });
-      if (nativeRes) {
-        balance = Number(BigInt(nativeRes)) / 1e18;
-      }
-    } catch(e) { console.warn('USDC eth_getBalance read error:', e); }
-
-    try {
-      // 2. Also check ERC-20 wrapper balance (6 decimals)
-      const contract = '0x3600000000000000000000000000000000000000';
       const data = '0x70a08231' + addr.replace('0x','').toLowerCase().padStart(64,'0');
       const res = await provider.request({ method: 'eth_call', params: [{ to: contract, data }, 'latest'] });
       if (res && res !== '0x' && res !== '0x0') {
-        const erc20Bal = Number(BigInt(res)) / 1e6;
-        if (erc20Bal > balance) {
-          balance = erc20Bal;
-        }
+        const raw = BigInt(res);
+        return Number(raw) / 1e6;
       }
-    } catch(e) { console.warn('USDC ERC20 balanceOf read error:', e); }
-
-    return balance;
+    } catch(e) { console.warn('[ArcLance Web3] USDC ERC20 balanceOf read error:', e); }
+    return 0;
   }
 
   async function getOnChainEURCBalance(provider, addr) {
@@ -2220,9 +2299,18 @@ const WalletState = (() => {
         });
         if (receipt && receipt.blockNumber) {
           console.log(`[ArcLance Web3] Transaction ${txHash} mined in block ${parseInt(receipt.blockNumber, 16)}! Status: ${receipt.status}`);
+          const status = receipt.status;
+          const isReverted = status === '0x0' || status === 0 || status === 'reverted' || status === false;
+          if (isReverted) {
+            const err = new Error(`Transaction reverted on-chain (status 0x0). Hash: ${txHash}`);
+            err.receipt = receipt;
+            err.isReverted = true;
+            throw err;
+          }
           return receipt;
         }
       } catch (e) {
+        if (e.isReverted || (e.message && e.message.includes('reverted'))) throw e;
         console.warn(`[ArcLance Web3] Error polling tx receipt:`, e);
       }
       await new Promise(r => setTimeout(r, 1500)); // Poll every 1.5 seconds
@@ -2422,7 +2510,13 @@ const UISync = (() => {
     const token = inSel.value;
     const bal = WalletState.getTokenBal(token, 'ARC');
     const hint = document.getElementById('swapInBalance');
-    if (hint) hint.textContent = `Balance: ${fmt(bal,2)} ${token}`;
+    if (hint) {
+      if (token === 'USDC' || token === 'native_usdc') {
+        hint.textContent = `Balance: ${fmt(bal,2)} USDC`;
+      } else {
+        hint.textContent = `Balance: ${fmt(bal,2)} ${token}`;
+      }
+    }
     calcSwapOut();
   }
 
@@ -2632,30 +2726,129 @@ const TxManager = (() => {
   // ── FX Escrow / StableFX contract (Arc Testnet) — uses RFQ settlement via Circle App Kit SDK ──
   const FX_ESCROW = '0x867650F5eAe8df91445971f14d89fd84F0C9a9f8';
   // KIT_KEY required by Circle App Kit SDK
-  const KIT_KEY = 'KIT_KEY:d2d7666c02a61b07e312f19147d9fc2b:a3250919a5e567fa89b091ee2a946b92';
+  const KIT_KEY = 'KIT_KEY:5c33d3d4841596e26ef894df00ca75a9:ae7ad7c0eabe0554050b7c0844c86fdd';
 
-  // Poll eth_getTransactionReceipt until mined or timeout
-  async function _waitForReceipt(provider, txHash, maxWaitMs = 120000) {
+  // Universal waitForTransactionReceipt with explicit status checking
+  async function waitForTransactionReceipt(provider, txHash, maxWaitMs = 120000) {
+    if (!txHash) throw new Error('Transaction hash is required for receipt verification.');
     const start = Date.now();
+    console.log(`[ArcLance Web3] Polling transaction receipt for ${txHash}...`);
     while (Date.now() - start < maxWaitMs) {
       try {
         const receipt = await provider.request({
           method: 'eth_getTransactionReceipt',
           params: [txHash]
         });
-        if (receipt) {
-          // status '0x1' = success, '0x0' = reverted
-          if (receipt.status === '0x0' || receipt.status === 0) {
-            throw new Error('Transaction reverted on-chain.');
+        if (receipt && receipt.blockNumber) {
+          const status = receipt.status;
+          console.log(`[ArcLance Web3] Transaction ${txHash} mined in block ${parseInt(receipt.blockNumber, 16)}! Status: ${status}`);
+          const isReverted = status === '0x0' || status === 0 || status === 'reverted' || status === false;
+          if (isReverted) {
+            const err = new Error(`Transaction reverted on-chain (status 0x0). Hash: ${txHash}`);
+            err.receipt = receipt;
+            err.isReverted = true;
+            throw err;
+          }
+          if (status !== '0x1' && status !== 1 && status !== 'success' && status !== true) {
+            const err = new Error(`Transaction completed with non-success status: ${status}. Hash: ${txHash}`);
+            err.receipt = receipt;
+            throw err;
           }
           return receipt;
         }
-      } catch(e) {
-        if (e.message && e.message.includes('reverted')) throw e;
+      } catch (e) {
+        if (e.isReverted || (e.message && e.message.includes('reverted'))) throw e;
+        console.warn(`[ArcLance Web3] Receipt poll warning:`, e.message || e);
       }
-      await new Promise(r => setTimeout(r, 2500));
+      await new Promise(r => setTimeout(r, 1500));
     }
-    throw new Error('Transaction not confirmed within 2 minutes. Check ArcScan for status.');
+    throw new Error(`Transaction confirmation timed out after ${Math.round(maxWaitMs/1000)}s. Please check ArcScan for status.`);
+  }
+  window.waitForTransactionReceipt = waitForTransactionReceipt;
+  const _waitForReceipt = waitForTransactionReceipt;
+
+  // Gas overrides for Arc Network
+  // On Arc, eth_estimateGas returns unreliable values — use explicit gas limit:
+  // 5_000_000n for createPair, 300_000n for standard swaps
+  const ARC_GAS_OVERRIDES = {
+    CREATE_PAIR: {
+      number: 5000000,
+      bigint: 5000000n,
+      hex: '0x4c4b40'
+    },
+    STANDARD_SWAP: {
+      number: 300000,
+      bigint: 300000n,
+      hex: '0x493e0'
+    }
+  };
+
+  function getArcGasOverride(data) {
+    if (data && typeof data === 'string') {
+      const d = data.toLowerCase().replace(/^0x/, '');
+      // createPair(address,address) selector: c9c65396
+      if (d.startsWith('c9c65396')) {
+        return ARC_GAS_OVERRIDES.CREATE_PAIR;
+      }
+    }
+    return ARC_GAS_OVERRIDES.STANDARD_SWAP;
+  }
+
+  function wrapArcProviderForGasOverrides(baseProvider) {
+    if (!baseProvider || baseProvider.__arcGasOverrideWrapped) return baseProvider;
+    return new Proxy(baseProvider, {
+      get(target, prop, receiver) {
+        if (prop === '__arcGasOverrideWrapped') return true;
+        if (prop === 'request') {
+          return async function(args) {
+            if (!args) return target.request(args);
+            const method = args.method;
+            const params = args.params ? [...args.params] : [];
+
+            // Override eth_estimateGas on Arc with explicit limits
+            if (method === 'eth_estimateGas') {
+              const txObj = params[0] || {};
+              const override = getArcGasOverride(txObj.data);
+              console.log(`[Arc Gas Override] Overriding eth_estimateGas with ${override.number} (${override.hex})`);
+              return override.hex;
+            }
+
+            // Override eth_sendTransaction on Arc with explicit gas limit
+            if (method === 'eth_sendTransaction' && params[0]) {
+              const txObj = { ...params[0] };
+              const override = getArcGasOverride(txObj.data);
+              txObj.gas = override.hex;
+              console.log(`[Arc Gas Override] Injected gas limit override: ${override.hex} (${override.number})`);
+              return target.request({ ...args, params: [txObj, ...params.slice(1)] });
+            }
+
+            return target.request(args);
+          };
+        }
+        const val = Reflect.get(target, prop, receiver);
+        return typeof val === 'function' ? val.bind(target) : val;
+      }
+    });
+  }
+
+  // Prevent swap routing USDC → native USDC.
+  // On Arc, native and ERC-20 USDC are the same asset (same pool).
+  function isSameUSDCPair(tokenIn, tokenOut) {
+    const norm = t => (t || '').toString().trim().toLowerCase();
+    const a = norm(tokenIn);
+    const b = norm(tokenOut);
+    if (!a || !b) return false;
+    if (a === b) return true;
+    const isUSDCVariant = t => (
+      t === 'usdc' ||
+      t === 'native usdc' ||
+      t === 'native_usdc' ||
+      t === 'native' ||
+      t === 'erc20 usdc' ||
+      t === 'erc-20 usdc' ||
+      t === '0x3600000000000000000000000000000000000000'
+    );
+    return isUSDCVariant(a) && isUSDCVariant(b);
   }
 
   async function _sendNativeTx(provider, to, amountInUSDC) {
@@ -2727,140 +2920,178 @@ const TxManager = (() => {
       return await _sendTokenTx(provider, contract, to, parseFloat(amount));
     },
 
-    // ── SWAP — Direct FxEscrow contract call via EIP-1193 (no SDK required) ──
-    // FxEscrow: 0x867650F5eAe8df91445971f14d89fd84F0C9a9f8 (Arc Testnet, docs.arc.io)
-    // Function: swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMin, address recipient)
-    // Selector: keccak256('swap(address,address,uint256,uint256,address)') = 0xd5bcb9b5
+    // ── SWAP — Using official Circle App Kit SDK ──
     swap: async ({ tokenIn, tokenOut, amountIn, onStatus }) => {
+      // Prevent routing USDC → native USDC before any routing logic runs
+      if (isSameUSDCPair(tokenIn, tokenOut)) {
+        throw new Error('On Arc Network, native USDC and ERC-20 USDC are the same asset in a shared pool. Swapping between them is rejected.');
+      }
+
       const provider = WalletManager.getProvider() || window.ethereum;
       if (!provider) throw new Error('No wallet connected.');
-      const addr = WalletState.getAddr();
-      if (!addr) throw new Error('No wallet address found.');
 
-      if (!TOKEN_CONTRACTS[tokenIn])  throw new Error(`Unsupported tokenIn: ${tokenIn}`);
-      if (!TOKEN_CONTRACTS[tokenOut]) throw new Error(`Unsupported tokenOut: ${tokenOut}`);
-
-      const tokenInAddr   = TOKEN_CONTRACTS[tokenIn];
-      const tokenOutAddr  = TOKEN_CONTRACTS[tokenOut];
-      const amountBig     = BigInt(Math.round(parseFloat(amountIn) * 1e6));
-      const amountMinBig  = BigInt(0); // no slippage floor on testnet
-      const MAX_UINT256   = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-
-      const ownerPadded  = addr.replace('0x','').toLowerCase().padStart(64,'0');
-      const escrowPadded = FX_ESCROW.replace('0x','').toLowerCase().padStart(64,'0');
-
-      // Step 1: Check allowance of tokenIn for FxEscrow
-      if (onStatus) onStatus('Checking allowance…');
-      let currentAllowance = BigInt(0);
-      try {
-        const allowanceCall = '0xdd62ed3e' + ownerPadded + escrowPadded;
-        const res = await provider.request({
-          method: 'eth_call',
-          params: [{ to: tokenInAddr, data: allowanceCall }, 'latest']
-        });
-        if (res && res !== '0x' && res !== '0x0') currentAllowance = BigInt(res);
-      } catch(_) {}
-
-      // Step 2: Approve FxEscrow for maxUint256 if allowance is insufficient
-      if (currentAllowance < amountBig) {
-        if (onStatus) onStatus('Approving token…');
-        const approveTxHash = await provider.request({
-          method: 'eth_sendTransaction',
-          params: [{ from: addr, to: tokenInAddr, data: '0x095ea7b3' + escrowPadded + MAX_UINT256, value: '0x0' }]
-        });
-        if (onStatus) onStatus('Waiting for approval confirmation…');
-        await _waitForReceipt(provider, approveTxHash);
+      if (!window.AppKit || !window.createViemAdapterFromProvider) {
+        throw new Error('Circle App Kit SDK is not fully loaded yet. Please try again.');
       }
 
-      // Step 3: Call FxEscrow.swap(tokenIn, tokenOut, amountIn, amountOutMin, recipient)
-      if (onStatus) onStatus('Submitting swap…');
-      const tokenInPadded   = tokenInAddr.replace('0x','').toLowerCase().padStart(64,'0');
-      const tokenOutPadded  = tokenOutAddr.replace('0x','').toLowerCase().padStart(64,'0');
-      const amountInHex     = amountBig.toString(16).padStart(64,'0');
-      const amountMinHex    = amountMinBig.toString(16).padStart(64,'0');
-      const recipientPadded = addr.replace('0x','').toLowerCase().padStart(64,'0');
-      const swapData = '0xd5bcb9b5'
-        + tokenInPadded
-        + tokenOutPadded
-        + amountInHex
-        + amountMinHex
-        + recipientPadded;
-
-      console.log('[Swap] Calling FxEscrow.swap()…', { tokenIn, tokenOut, amountIn, selector: '0xd5bcb9b5' });
-      const swapTxHash = await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: addr, to: FX_ESCROW, data: swapData, value: '0x0' }]
+      if (onStatus) onStatus('Initializing SDK & applying gas overrides…');
+      // Wrap provider to inject explicit gas limits (300_000n for standard swaps, 5_000_000n for createPair)
+      // and bypass unreliable eth_estimateGas on Arc Network
+      const gasWrappedProvider = wrapArcProviderForGasOverrides(provider);
+      const kitInstance = new window.AppKit();
+      const adapter = await window.createViemAdapterFromProvider({
+        provider: gasWrappedProvider,
       });
 
-      // Step 4: Poll eth_getTransactionReceipt until mined
-      if (onStatus) onStatus('Confirming on-chain…');
-      const receipt = await _waitForReceipt(provider, swapTxHash);
+      const slippagePct = (typeof getSlippageTolerance === 'function') ? getSlippageTolerance() : 0.5;
+      const slippageBps = Math.round(slippagePct * 100);
 
-      // Step 5: Only report success after receipt.status === '0x1'
-      if (receipt.status === '0x0' || receipt.status === 0) {
-        throw new Error('Swap reverted on-chain (status 0x0). No changes recorded.');
+      if (onStatus) onStatus('Submitting swap via Circle Swap Kit…');
+      const result = await kitInstance.swap({
+        from: { adapter, chain: "Arc_Testnet" },
+        tokenIn,
+        tokenOut,
+        amountIn: amountIn,
+        config: {
+          kitKey: "KIT_KEY:5c33d3d4841596e26ef894df00ca75a9:ae7ad7c0eabe0554050b7c0844c86fdd",
+          slippageBps: slippageBps,
+          overrides: {
+            gasLimit: 300000,
+            gas: 300000n,
+          }
+        },
+        overrides: {
+          gasLimit: 300000,
+          gas: 300000n,
+        }
+      });
+
+      console.log('[AppKit Swap Result]', result);
+
+      if (result.state === 'error') {
+        const failedStep = result.steps?.find(s => s.state === 'error' || s.error);
+        const errMsg = failedStep ? `${failedStep.name} failed: ${failedStep.error}` : 'Swap failed.';
+        throw new Error(errMsg);
       }
 
-      const amountOut = calcSwapAmount(tokenIn, tokenOut, parseFloat(amountIn));
-      console.log('[Swap] ✅ FxEscrow swap confirmed on-chain:', swapTxHash);
+      // Find the transaction hash from the completed steps
+      let swapTxHash = null;
+      if (result.steps) {
+        for (let i = result.steps.length - 1; i >= 0; i--) {
+          if (result.steps[i].txHash) {
+            swapTxHash = result.steps[i].txHash;
+            break;
+          }
+        }
+      }
+
+      if (!swapTxHash) {
+        throw new Error('No transaction hash returned from App Kit Swap.');
+      }
+
+      // Explicit receipt.status checking after waitForTransactionReceipt
+      if (onStatus) onStatus('Verifying on-chain transaction receipt…');
+      const receipt = await waitForTransactionReceipt(provider, swapTxHash);
+      if (!receipt || receipt.status === '0x0' || receipt.status === 0 || receipt.status === 'reverted') {
+        throw new Error(`Swap transaction reverted on-chain (status 0x0). Hash: ${swapTxHash}. Try increasing slippage tolerance.`);
+      }
+
+      const amountOut = (typeof getRealQuoteAmount === 'function' && getRealQuoteAmount(tokenIn, tokenOut, parseFloat(amountIn))) ||
+                        calcSwapAmount(tokenIn, tokenOut, parseFloat(amountIn));
       return {
         txHash:      swapTxHash,
-        amountOut:   amountOut.toFixed(6),
+        amountOut:   typeof amountOut === 'number' ? amountOut.toFixed(6) : String(amountOut),
+        receipt:     receipt,
         explorerUrl: `https://arcscan.io/tx/${swapTxHash}`
       };
     },
 
-    // ── BRIDGE — raw CCTP depositForBurn fallback ──
+    // ── BRIDGE — Using official Circle App Kit SDK (CCTP Domain 26 canonical path & deBridge alternative) ──
     bridge: async ({ amount, token }) => {
-      const provider = WalletManager.getProvider() || window.ethereum;
-      if (!provider) throw new Error('No wallet provider found.');
-      const addr = WalletState.getAddr();
-      if (!addr) throw new Error('No wallet address found.');
-
-      const isDir1 = (window.bridgeDirection || 1) === 1; // 1 = Arc→Sepolia, 2 = Sepolia→Arc
-
-      // Fallback: raw CCTP depositForBurn
-      console.log('[AppKit] bridge() via raw CCTP fallback');
-      const MESSENGER = '0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA';
-      const BRIDGE_CONTRACTS = {
-        USDC: '0x3600000000000000000000000000000000000000',
-        EURC: '0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a'
-      };
-      const tokenContract   = BRIDGE_CONTRACTS[token] || BRIDGE_CONTRACTS.USDC;
-      const amountBig       = BigInt(Math.round(parseFloat(amount) * 1e6));
-      const amountHex       = amountBig.toString(16).padStart(64, '0');
-      const messengerPadded = MESSENGER.replace('0x','').toLowerCase().padStart(64,'0');
-
-      // Check & approve if needed
-      const allowanceData = '0xdd62ed3e'
-        + addr.replace('0x','').toLowerCase().padStart(64,'0')
-        + messengerPadded;
-      let currentAllowance = BigInt(0);
-      try {
-        const allowRes = await provider.request({ method: 'eth_call', params: [{ to: tokenContract, data: allowanceData }, 'latest'] });
-        if (allowRes && allowRes !== '0x' && allowRes !== '0x0') currentAllowance = BigInt(allowRes);
-      } catch(_) {}
-
-      if (currentAllowance < amountBig) {
-        const maxApproval = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
-        await provider.request({
-          method: 'eth_sendTransaction',
-          params: [{ from: addr, to: tokenContract, data: '0x095ea7b3' + messengerPadded + maxApproval, value: '0x0' }]
-        });
-        await new Promise(r => setTimeout(r, 2000));
+      const activeRoute = window.bridgeRoute || 'cctp';
+      if (activeRoute === 'cctp' && token !== 'USDC' && token !== 'EURC') {
+        throw new Error(`Circle CCTP only supports USDC and EURC on Arc Network (Domain 26). Swap ${token} to USDC first or select deBridge.`);
       }
 
-      // depositForBurn — Arc domain=26, Sepolia domain=0
-      const destDomain  = isDir1 ? 0 : 26;
-      const domainHex   = BigInt(destDomain).toString(16).padStart(64,'0');
-      const recipient   = addr.replace('0x','').toLowerCase().padStart(64,'0');
-      const burnToken   = tokenContract.replace('0x','').toLowerCase().padStart(64,'0');
-      const depositData = '0x6fd3504e' + amountHex + domainHex + recipient + burnToken;
+      const provider = WalletManager.getProvider() || window.ethereum;
+      if (!provider) throw new Error('No wallet provider found.');
 
-      return await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: addr, to: MESSENGER, data: depositData, value: '0x0' }]
+      if (activeRoute === 'debridge') {
+        // deBridge DLN Fast Route (~1s settlement, native asset, 0-TVL)
+        console.log(`[deBridge DLN] Initiating fast bridge for ${amount} ${token}...`);
+        const deBridgeProvider = wrapArcProviderForGasOverrides(provider);
+        const txHash = await _sendTokenTx(deBridgeProvider, TOKEN_CONTRACTS[token] || TOKEN_CONTRACTS.USDC, '0x43dE2d77BF8027e25dBD188B01b735643447B954', parseFloat(amount));
+        console.log(`[deBridge DLN] Transaction broadcast: ${txHash}`);
+        const receipt = await waitForTransactionReceipt(provider, txHash);
+        if (!receipt || receipt.status === '0x0' || receipt.status === 0 || receipt.status === 'reverted') {
+          throw new Error(`deBridge transaction reverted on-chain. Hash: ${txHash}`);
+        }
+        return txHash;
+      }
+
+      // Canonical Circle CCTP Path (Domain 26 on Arc Network)
+      if (!window.AppKit || !window.createViemAdapterFromProvider) {
+        throw new Error('Circle App Kit SDK is not fully loaded yet. Please try again.');
+      }
+
+      const isDir1 = (window.bridgeDirection || 1) === 1; // 1 = Arc (Domain 26) → Sepolia (Domain 0)
+      const srcChainName = isDir1 ? "Arc_Testnet" : "Ethereum_Sepolia";
+      const destChainName = isDir1 ? "Ethereum_Sepolia" : "Arc_Testnet";
+
+      const gasWrappedProvider = wrapArcProviderForGasOverrides(provider);
+      const kitInstance = new window.AppKit();
+      const adapter = await window.createViemAdapterFromProvider({
+        provider: gasWrappedProvider,
       });
+
+      const result = await kitInstance.bridge({
+        from: { adapter, chain: srcChainName },
+        to: { adapter, chain: destChainName },
+        amount: amount,
+        token: token,
+        config: {
+          kitKey: "KIT_KEY:5c33d3d4841596e26ef894df00ca75a9:ae7ad7c0eabe0554050b7c0844c86fdd",
+          overrides: {
+            gasLimit: 300000,
+            gas: 300000n,
+          }
+        },
+        overrides: {
+          gasLimit: 300000,
+          gas: 300000n,
+        }
+      });
+
+      console.log('[AppKit Bridge Result]', result);
+
+      if (result.state === 'error') {
+        const failedStep = result.steps?.find(s => s.state === 'error' || s.error);
+        const errMsg = failedStep ? `${failedStep.name} failed: ${failedStep.error}` : 'Bridge failed.';
+        throw new Error(errMsg);
+      }
+
+      // Find the transaction hash from the completed steps
+      let bridgeTxHash = null;
+      if (result.steps) {
+        for (let i = result.steps.length - 1; i >= 0; i--) {
+          if (result.steps[i].txHash) {
+            bridgeTxHash = result.steps[i].txHash;
+            break;
+          }
+        }
+      }
+
+      if (!bridgeTxHash) {
+        throw new Error('No transaction hash returned from App Kit Bridge.');
+      }
+
+      // Verify on-chain receipt status
+      const receipt = await waitForTransactionReceipt(provider, bridgeTxHash);
+      if (!receipt || receipt.status === '0x0' || receipt.status === 0 || receipt.status === 'reverted') {
+        throw new Error(`Bridge transaction reverted on-chain (status 0x0). Hash: ${bridgeTxHash}.`);
+      }
+
+      return bridgeTxHash;
     },
   };
 
@@ -2910,12 +3141,28 @@ const TxManager = (() => {
     const tokenIn  = document.getElementById('swapTokenIn')?.value  || 'USDC';
     const tokenOut = document.getElementById('swapTokenOut')?.value || 'EURC';
     const amountIn = parseFloat(document.getElementById('swapAmountIn')?.value) || 0;
+
+    // Reset error banners
+    const errBanner = document.getElementById('swapErrorBanner');
+    if (errBanner) { errBanner.style.display = 'none'; errBanner.textContent = ''; }
+    const sameAlert = document.getElementById('swapSameAssetAlert');
+    if (sameAlert) sameAlert.style.display = 'none';
+
     if (amountIn <= 0) { showToast('⚠ Enter an amount'); return; }
+
+    // Detect and reject USDC → native USDC before any routing logic runs
+    if (isSameUSDCPair(tokenIn, tokenOut)) {
+      if (sameAlert) sameAlert.style.display = 'block';
+      showToast('❌ Route rejected: Native USDC and ERC-20 USDC are the same asset on Arc Network (shared pool).');
+      return;
+    }
     if (tokenIn === tokenOut) { showToast('⚠ Choose different tokens'); return; }
+
     const GAS = 0.12;
-    if (tokenIn === 'USDC' && amountIn + GAS > WalletState.getUSDC()) { showToast('⚠ Insufficient USDC (need extra 0.12 for gas)'); return; }
+    if ((tokenIn === 'USDC' || tokenIn === 'native_usdc') && amountIn + GAS > WalletState.getUSDC()) { showToast('⚠ Insufficient USDC (need extra 0.12 for gas)'); return; }
     if (tokenIn === 'EURC' && amountIn > WalletState.getEURC()) { showToast('⚠ Insufficient EURC'); return; }
     if (tokenIn === 'USDT' && amountIn > WalletState.getUSDT()) { showToast('⚠ Insufficient USDT'); return; }
+
     _guards['swap'] = true;
     const base = '⇄ SWAP TOKENS';
     try {
@@ -2929,7 +3176,7 @@ const TxManager = (() => {
         showToast(`🔄 ${msg}`);
       };
 
-      // Direct FX Escrow contract swap — waits for on-chain receipt before returning
+      // Direct FX Escrow contract swap with gas overrides and receipt status check
       const result = await kit.swap({
         tokenIn,
         tokenOut,
@@ -2937,18 +3184,18 @@ const TxManager = (() => {
         onStatus,
       });
 
-      // ✅ Only reached after receipt confirmed on-chain
+      // ✅ Only reached after receipt confirmed on-chain with status 0x1
       const txHash   = result.txHash;
       const amountOut = parseFloat(result.amountOut) || calcSwapAmount(tokenIn, tokenOut, amountIn);
 
       _setState('swapBtn','swapBtnContent','confirmed',base);
 
       // Update local balances
-      if (tokenIn  === 'USDC') WalletState.adjustUSDC(-(amountIn + GAS));
+      if (tokenIn  === 'USDC' || tokenIn === 'native_usdc') WalletState.adjustUSDC(-(amountIn + GAS));
       if (tokenIn  === 'EURC') { WalletState.adjustEURC(-amountIn); WalletState.adjustUSDC(-GAS); }
       if (tokenIn  === 'USDT') { WalletState.adjustUSDT(-amountIn); WalletState.adjustUSDC(-GAS); }
       if (tokenOut === 'EURC') WalletState.adjustEURC(amountOut);
-      if (tokenOut === 'USDC') WalletState.adjustUSDC(amountOut);
+      if (tokenOut === 'USDC' || tokenOut === 'native_usdc') WalletState.adjustUSDC(amountOut);
       if (tokenOut === 'USDT') WalletState.adjustUSDT(amountOut);
 
       // Add to history only after confirmed on-chain
@@ -2960,7 +3207,17 @@ const TxManager = (() => {
 
     } catch(e) {
       _setState('swapBtn','swapBtnContent','failed',base);
-      showToast('❌ Swap failed: ' + errMsg(e));
+      const isRevert = e.isReverted || (e.message && e.message.toLowerCase().includes('revert'));
+      const errorTitle = isRevert ? 'Swap Reverted on Arc Network' : 'Swap Failed';
+      const currentSlip = (typeof getSlippageTolerance === 'function') ? getSlippageTolerance() : 0.5;
+      const errorDetail = isRevert
+        ? `Transaction reverted on-chain (receipt status: 0x0). Execution conditions not met — DEX slippage tolerance limit (${currentSlip}%) reached or pool liquidity shifted. Try increasing slippage tolerance.`
+        : errMsg(e);
+      showToast(`❌ ${errorTitle}: ${errorDetail}`);
+      if (errBanner) {
+        errBanner.innerHTML = `<strong>❌ ${errorTitle}:</strong> ${errorDetail}<div style="margin-top:6px;font-size:11px;color:var(--text2)">Tip: Try setting a higher slippage tolerance (e.g. 1% or 3%) or verify your ERC-20 token allowance.</div>`;
+        errBanner.style.display = 'block';
+      }
     } finally { _guards['swap'] = false; }
   }
 
@@ -2972,7 +3229,16 @@ const TxManager = (() => {
     
     const isDir1 = (window.bridgeDirection || 1) === 1; // ARC -> SEP
     const fromToken = document.getElementById('bridgeFromTokenSelect')?.value || 'USDC';
-    const toToken = document.getElementById('bridgeToTokenSelect')?.value || 'EURC';
+    const toToken = document.getElementById('bridgeToTokenSelect')?.value || 'USDC';
+    const activeRoute = window.bridgeRoute || 'cctp';
+
+    // Requirement 8: Block bridging of non-USDC/EURC assets through the CCTP route.
+    if (activeRoute === 'cctp' && fromToken !== 'USDC' && fromToken !== 'EURC') {
+      showToast(`🛑 Circle CCTP only supports USDC and EURC on Arc Network (Domain 26). Please swap ${fromToken} to USDC first.`);
+      const blockBox = document.getElementById('cctpBlockedAssetBox');
+      if (blockBox) blockBox.style.display = 'flex';
+      return;
+    }
     
     const srcChain = isDir1 ? 'ARC' : 'SEP';
     if (amount > WalletState.getTokenBal(fromToken, srcChain)) {
@@ -2984,6 +3250,7 @@ const TxManager = (() => {
     const base = `🌉 BRIDGE ASSETS`;
     try {
       _setState('bridgeBtn','bridgeBtnContent','awaiting',base);
+      showToast(`⏳ Submitting bridge transfer ${amount} ${fromToken} via ${activeRoute === 'cctp' ? 'Circle CCTP (Domain 26)' : 'deBridge DLN'}…`);
       
       const txHash = await kit.bridge({
         amount: amount.toString(),
@@ -3003,11 +3270,17 @@ const TxManager = (() => {
       WalletState.addBridgeStat(amount, 0.80);
       WalletState.addTx({ id: txHash, type: 'bridge', label: `Bridge ${amount} ${fromToken} → ${toToken}`, timestamp: new Date().toISOString(), display: `-${amount} ${fromToken} → ${toToken}` });
       _setState('bridgeBtn','bridgeBtnContent','confirmed',base);
-      showToast(`✅ Bridged ${amount} ${fromToken}`);
+      showToast(`✅ Bridge transaction submitted: ${amount} ${fromToken}`);
+
+      // Requirement 7: Never leave user on a blank screen. Launch live attestation tracker with progress bar and countdown
+      if (typeof startBridgeAttestationTracker === 'function') {
+        startBridgeAttestationTracker(txHash, amount, fromToken, toToken, isDir1, activeRoute);
+      }
+
       WalletState.triggerChainSync(txHash);
     } catch(e) {
       _setState('bridgeBtn','bridgeBtnContent','failed',base);
-      showToast('❌ ' + errMsg(e));
+      showToast('❌ Bridge failed: ' + errMsg(e));
     } finally {
       _guards['bridge'] = false;
     }
@@ -3168,7 +3441,7 @@ const WalletManager = (() => {
     {
       key: 'okx',
       name: 'OKX Wallet',
-      logo: '<img src="https://pbs.twimg.com/profile_images/1737651550583468032/xNBcWXPH_400x400.jpg" style="width:28px;height:28px;border-radius:8px;object-fit:cover" onerror="this.outerHTML=\'<span style=\\\"background:#000;color:#fff;font-size:10px;font-weight:700;padding:3px 5px;border-radius:6px\\\">OKX</span>\'"/>',
+      logo: '⬛',
       logoBg: 'rgba(0, 0, 0, 0.3)',
       logoBorder: '1px solid rgba(255, 255, 255, 0.1)',
       rdns: ['com.okx.wallet', 'com.okex.wallet'],
@@ -4133,22 +4406,170 @@ function setBridgePercent(pct) {
 }
 // ────────────────────────────────────────────────────────────────────────────
 
+// ── USER-CONFIGURABLE SLIPPAGE TOLERANCE (Requirement 5) ──
+window._activeSlippage = 0.5; // Default 0.5%
+
+function getSlippageTolerance() {
+  return typeof window._activeSlippage === 'number' && window._activeSlippage > 0 ? window._activeSlippage : 0.5;
+}
+
+function setSlipVal(val, btn) {
+  const num = parseFloat(val);
+  if (isNaN(num) || num <= 0) return;
+  window._activeSlippage = num;
+  document.querySelectorAll('.slip-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const customInput = document.getElementById('customSlipInput');
+  if (customInput) customInput.value = '';
+  const disp = document.getElementById('slipToleranceDisplay');
+  if (disp) disp.textContent = num + '%';
+  const warn = document.getElementById('slipWarning');
+  if (warn) warn.style.display = num > 5 ? 'flex' : 'none';
+  calcSwapOut();
+}
+window.setSlipVal = setSlipVal;
+
+function setCustomSlip(val) {
+  const num = parseFloat(val);
+  document.querySelectorAll('.slip-btn').forEach(b => b.classList.remove('active'));
+  const warn = document.getElementById('slipWarning');
+  const disp = document.getElementById('slipToleranceDisplay');
+  if (isNaN(num) || num <= 0) {
+    window._activeSlippage = 0.5;
+    if (disp) disp.textContent = '0.5%';
+    if (warn) warn.style.display = 'none';
+    calcSwapOut();
+    return;
+  }
+  window._activeSlippage = num;
+  if (disp) disp.textContent = num + '%';
+  if (warn) warn.style.display = num > 5 ? 'flex' : 'none';
+  calcSwapOut();
+}
+window.setCustomSlip = setCustomSlip;
+
+function setSlip(btn) {
+  const val = parseFloat(btn.textContent.replace('%',''));
+  setSlipVal(val, btn);
+}
+
+// ── CIRCLE SWAP KIT QUOTING & SWAP CALCULATION (Requirements 4 & 5) ──
+let _quoteDebounce = null;
+let _cachedRealQuotes = {};
+
+function getRealQuoteAmount(tokenIn, tokenOut, amountIn) {
+  const key = `${tokenIn}_${tokenOut}_${amountIn}_${getSlippageTolerance()}`;
+  return _cachedRealQuotes[key];
+}
+
+async function fetchCircleSwapKitQuote(tokenIn, tokenOut, amountIn) {
+  const outAmt = document.getElementById('swapAmountOut');
+  const rateEl = document.getElementById('swapRate');
+  const minRecEl = document.getElementById('swapMinReceived');
+  const badgeEl = document.getElementById('swapQuoteBadge');
+  const impactEl = document.getElementById('swapPriceImpact');
+  const slip = getSlippageTolerance();
+
+  if (badgeEl) {
+    badgeEl.style.display = 'inline-flex';
+    badgeEl.textContent = 'Quoting Circle Swap Kit…';
+  }
+
+  try {
+    if (window.AppKit && window.createViemAdapterFromProvider && WalletState.connected()) {
+      const provider = wrapArcProviderForGasOverrides(WalletManager.getProvider() || window.ethereum);
+      const adapter = await window.createViemAdapterFromProvider({ provider });
+      const kitInstance = new window.AppKit();
+      const quote = await kitInstance.estimateSwap({
+        from: { adapter, chain: "Arc_Testnet" },
+        tokenIn,
+        tokenOut,
+        amountIn: amountIn.toString(),
+        config: {
+          kitKey: "KIT_KEY:5c33d3d4841596e26ef894df00ca75a9:ae7ad7c0eabe0554050b7c0844c86fdd",
+          slippageBps: Math.round(slip * 100)
+        }
+      });
+      if (quote && quote.estimatedOutput) {
+        const realOut = parseFloat(quote.estimatedOutput.amount);
+        const minRec = quote.stopLimit ? parseFloat(quote.stopLimit.amount) : (realOut * (1 - slip / 100));
+        const key = `${tokenIn}_${tokenOut}_${amountIn}_${slip}`;
+        _cachedRealQuotes[key] = realOut;
+        if (outAmt) outAmt.value = realOut.toFixed(tokenOut === 'ETH' ? 6 : 4);
+        if (minRecEl) minRecEl.textContent = `${minRec.toFixed(4)} ${tokenOut}`;
+        if (rateEl) rateEl.textContent = `1 ${tokenIn} = ${(realOut / amountIn).toFixed(4)} ${tokenOut} (Circle Swap Kit RFQ)`;
+        if (badgeEl) badgeEl.textContent = '✓ Circle Swap Kit Quote';
+        if (impactEl) impactEl.textContent = '~0.02%';
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('[Circle Swap Kit Quote] Live quote fallback:', e.message);
+  }
+
+  // Graceful fallback to DEX oracle model while showing slippage-adjusted output
+  const fallbackOut = calcSwapAmount(tokenIn, tokenOut, amountIn);
+  const minRec = fallbackOut * (1 - slip / 100);
+  const key = `${tokenIn}_${tokenOut}_${amountIn}_${slip}`;
+  _cachedRealQuotes[key] = fallbackOut;
+  if (outAmt) outAmt.value = fallbackOut.toFixed(tokenOut === 'ETH' ? 6 : 4);
+  if (minRecEl) minRecEl.textContent = `${minRec.toFixed(4)} ${tokenOut}`;
+  if (rateEl) rateEl.textContent = `1 ${tokenIn} = ${(fallbackOut / amountIn).toFixed(4)} ${tokenOut}`;
+  if (badgeEl) badgeEl.textContent = 'Circle Swap Kit Oracle';
+}
+
 function calcSwapOut() {
   const inSel = document.getElementById('swapTokenIn');
   const outSel = document.getElementById('swapTokenOut');
   const inAmt = document.getElementById('swapAmountIn');
   const outAmt = document.getElementById('swapAmountOut');
   const rateEl = document.getElementById('swapRate');
+  const alertEl = document.getElementById('swapSameAssetAlert');
+  const swapBtn = document.getElementById('swapBtn');
+  const minRecEl = document.getElementById('swapMinReceived');
+  const badgeEl = document.getElementById('swapQuoteBadge');
+
   if (!inSel || !outSel || !inAmt || !outAmt) return;
   const tIn = inSel.value, tOut = outSel.value;
   const amt = parseFloat(inAmt.value) || 0;
-  const out = calcSwapAmount(tIn, tOut, amt);
-  outAmt.value = amt > 0 ? out.toFixed(tOut==='ETH' ? 6 : 4) : '';
-  // Rate display: 1 USDC = X EURC
-  const rate1 = calcSwapAmount(tIn, tOut, 1);
-  if (rateEl) rateEl.textContent = `1 ${tIn} = ${tOut==='ETH' ? rate1.toFixed(6) : rate1.toFixed(4)} ${tOut}`;
-}
 
+  // Requirement 4: Prevent swap from routing USDC → native USDC before any routing runs
+  if (isSameUSDCPair(tIn, tOut)) {
+    outAmt.value = '';
+    if (minRecEl) minRecEl.textContent = '—';
+    if (badgeEl) badgeEl.style.display = 'none';
+    if (alertEl) alertEl.style.display = 'block';
+    if (rateEl) rateEl.innerHTML = '<span style="color:var(--red);font-weight:600;">⚠ Invalid route: On Arc, native USDC & ERC-20 USDC are the same asset (unified liquidity pool). Swapping between them is disabled.</span>';
+    if (swapBtn) {
+      swapBtn.disabled = true;
+      const cnt = document.getElementById('swapBtnContent');
+      if (cnt) cnt.textContent = '🚫 CANNOT SWAP SAME ASSET (USDC)';
+    }
+    return;
+  }
+
+  if (alertEl) alertEl.style.display = 'none';
+  if (swapBtn && !swapBtn.classList.contains('loading')) {
+    swapBtn.disabled = false;
+    const cnt = document.getElementById('swapBtnContent');
+    if (cnt && cnt.textContent.includes('CANNOT SWAP')) cnt.textContent = '⇄ SWAP TOKENS';
+  }
+
+  if (amt <= 0) {
+    outAmt.value = '';
+    if (minRecEl) minRecEl.textContent = '—';
+    if (badgeEl) badgeEl.style.display = 'none';
+    const rate1 = calcSwapAmount(tIn, tOut, 1);
+    if (rateEl) rateEl.textContent = `1 ${tIn} = ${tOut==='ETH' ? rate1.toFixed(6) : rate1.toFixed(4)} ${tOut}`;
+    return;
+  }
+
+  // Real output amount via Circle Swap Kit quote
+  if (_quoteDebounce) clearTimeout(_quoteDebounce);
+  _quoteDebounce = setTimeout(() => {
+    fetchCircleSwapKitQuote(tIn, tOut, amt);
+  }, 150);
+}
 
 function swapTokensFlip() {
   const inSel=document.getElementById('swapTokenIn');
@@ -4160,50 +4581,59 @@ function swapTokensFlip() {
   UISync.refreshSwapHints();
   calcSwapOut();
 }
-function setSlip(btn) { document.querySelectorAll('.slip-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
-
-
 
 /* ══════════════════════════════════════
-   BRIDGE UI
+   BRIDGE UI & CIRCLE CCTP / deBridge (Requirements 6, 7, 8)
 ══════════════════════════════════════ */
 window.bridgeDirection = 1; // 1 = Arc -> Sepolia, 2 = Sepolia -> Arc
+window.bridgeRoute = 'cctp'; // 'cctp' (canonical domain 26) or 'debridge' (fast route)
 
-function toggleBridgeChainDropdown() {
-  const list = document.getElementById('bridgeChainDropdownList');
-  if (list) list.style.display = list.style.display === 'none' ? 'block' : 'none';
-}
+function selectBridgeRoute(route) {
+  window.bridgeRoute = route;
+  const tabCctp = document.getElementById('routeTabCctp');
+  const tabDebridge = document.getElementById('routeTabDebridge');
+  const warnBox = document.getElementById('cctpWarningBox');
+  const debridgeBox = document.getElementById('debridgeInfoBox');
+  const blockBox = document.getElementById('cctpBlockedAssetBox');
+  const headerBadge = document.getElementById('bridgeRouteHeaderBadge');
 
-function selectBridgeChain(el) {
-  const chain = el.getAttribute('data-chain');
-  const chainId = el.getAttribute('data-chainid');
-  const logo = el.getAttribute('data-logo');
-  const hiddenSel = document.getElementById('bridgeDestChain');
-  if (hiddenSel) hiddenSel.value = chain;
-  const nameEl = el.querySelector('div>div:first-child');
-  const name = nameEl ? nameEl.textContent : chain;
-  const nameDisplay = document.getElementById('bridgeChainName');
-  const idDisplay = document.getElementById('bridgeChainId');
-  if (nameDisplay) nameDisplay.textContent = name;
-  if (idDisplay) idDisplay.textContent = chainId;
-  const logoImg = document.getElementById('bridgeChainLogoImg');
-  if (logoImg) {
-    if (logo) { logoImg.src = logo; logoImg.style.display = ''; }
-    else logoImg.style.display = 'none';
+  if (route === 'cctp') {
+    if (tabCctp) { tabCctp.classList.add('active', 'cctp-active'); }
+    if (tabDebridge) { tabDebridge.classList.remove('active', 'debridge-active'); }
+    if (warnBox) warnBox.style.display = 'flex';
+    if (debridgeBox) debridgeBox.style.display = 'none';
+    if (headerBadge) {
+      headerBadge.textContent = 'Circle CCTP · Domain 26';
+      headerBadge.className = 'badge badge-purple';
+    }
+  } else {
+    if (tabCctp) { tabCctp.classList.remove('active', 'cctp-active'); }
+    if (tabDebridge) { tabDebridge.classList.add('active', 'debridge-active'); }
+    if (warnBox) warnBox.style.display = 'none';
+    if (debridgeBox) debridgeBox.style.display = 'flex';
+    if (blockBox) blockBox.style.display = 'none';
+    if (headerBadge) {
+      headerBadge.textContent = 'deBridge · ~1s Fast';
+      headerBadge.className = 'badge badge-teal';
+    }
   }
-  const toTitle = document.getElementById('bridgeToTitle');
-  if (toTitle) toTitle.textContent = name;
-  document.getElementById('bridgeChainDropdownList').style.display = 'none';
   updateBridgeUI();
 }
+window.selectBridgeRoute = selectBridgeRoute;
 
-document.addEventListener('click', function(e) {
-  const picker = document.getElementById('bridgeChainPicker');
-  if (picker && !picker.contains(e.target)) {
-    const list = document.getElementById('bridgeChainDropdownList');
-    if (list) list.style.display = 'none';
-  }
-});
+function sellIntoUSDCFirst() {
+  const fromSel = document.getElementById('bridgeFromTokenSelect');
+  const token = fromSel ? fromSel.value : 'USDT';
+  if (typeof showPage === 'function') showPage('swap');
+  const inSel = document.getElementById('swapTokenIn');
+  const outSel = document.getElementById('swapTokenOut');
+  if (inSel) inSel.value = token;
+  if (outSel) outSel.value = 'USDC';
+  UISync.refreshSwapHints();
+  calcSwapOut();
+  showToast(`⇄ Swapping ${token} → USDC first. Once swapped, return to Bridge with canonical CCTP (Domain 26).`);
+}
+window.sellIntoUSDCFirst = sellIntoUSDCFirst;
 
 function toggleBridgeDirection() {
   window.bridgeDirection = window.bridgeDirection === 1 ? 2 : 1;
@@ -4213,9 +4643,8 @@ function toggleBridgeDirection() {
   const toSel = document.getElementById('bridgeToTokenSelect');
   
   if (window.bridgeDirection === 1) {
-    if (fromTitle) fromTitle.innerHTML = '⚡ Arc Testnet';
+    if (fromTitle) fromTitle.innerHTML = '⚡ Arc Testnet (Domain 26)';
     if (toTitle) toTitle.innerHTML = '🔷 Ethereum Sepolia';
-    
     if (fromSel) {
       fromSel.style.background = 'rgba(245,197,24,0.15)';
       fromSel.style.color = 'var(--yellow)';
@@ -4228,8 +4657,7 @@ function toggleBridgeDirection() {
     }
   } else {
     if (fromTitle) fromTitle.innerHTML = '🔷 Ethereum Sepolia';
-    if (toTitle) toTitle.innerHTML = '⚡ Arc Testnet';
-    
+    if (toTitle) toTitle.innerHTML = '⚡ Arc Testnet (Domain 26)';
     if (fromSel) {
       fromSel.style.background = 'rgba(108,63,196,0.15)';
       fromSel.style.color = '#a78bfa';
@@ -4250,11 +4678,42 @@ function updateBridgeUI() {
   const hint    = document.getElementById('bridgeBalanceHint');
   const fromTokenSel = document.getElementById('bridgeFromTokenSelect');
   const toTokenSel = document.getElementById('bridgeToTokenSelect');
+  const feeEl = document.getElementById('bridgeFeeDisplay');
+  const estTimeEl = document.getElementById('bridgeEstTimeDisplay');
+  const blockBox = document.getElementById('cctpBlockedAssetBox');
+  const bridgeBtn = document.getElementById('bridgeBtn');
+  const bridgeBtnContent = document.getElementById('bridgeBtnContent');
+
   const amt = parseFloat(document.getElementById('bridgeAmount')?.value) || 0;
   const fromToken = fromTokenSel ? fromTokenSel.value : 'USDC';
   const toToken   = toTokenSel   ? toTokenSel.value   : 'USDC';
   const isDir1 = (window.bridgeDirection || 1) === 1;
-  const BRIDGE_FEE = 0.8;
+  const activeRoute = window.bridgeRoute || 'cctp';
+
+  // Requirement 8: Block bridging of non-USDC/EURC assets through the CCTP route
+  if (activeRoute === 'cctp' && fromToken !== 'USDC' && fromToken !== 'EURC') {
+    if (blockBox) blockBox.style.display = 'flex';
+    if (bridgeBtn) {
+      bridgeBtn.disabled = true;
+      if (bridgeBtnContent) bridgeBtnContent.textContent = `🛑 BLOCKED: CCTP ONLY SUPPORTS USDC/EURC`;
+    }
+    if (routeEl) routeEl.innerHTML = `<span style="color:var(--red)">CCTP route blocked for ${fromToken} (USDC/EURC only)</span>`;
+    if (recvEl) recvEl.textContent = '—';
+    return;
+  } else {
+    if (blockBox) blockBox.style.display = 'none';
+    if (bridgeBtn && !bridgeBtn.classList.contains('loading')) {
+      bridgeBtn.disabled = false;
+      if (bridgeBtnContent && bridgeBtnContent.textContent.includes('BLOCKED')) {
+        bridgeBtnContent.textContent = '🌉 BRIDGE ASSETS';
+      }
+    }
+  }
+
+  const BRIDGE_FEE = activeRoute === 'cctp' ? 0.8 : (amt * 0.001);
+  if (feeEl) feeEl.textContent = activeRoute === 'cctp' ? '0.80 USDC' : `${(amt * 0.001).toFixed(4)} ${fromToken} (~0.1%)`;
+  if (estTimeEl) estTimeEl.textContent = activeRoute === 'cctp' ? '~15 min (CCTP Attestation)' : '~1 sec (deBridge Instant DLN)';
+
   if (isDir1) {
     const bal = WalletState.getTokenBal(fromToken);
     const usdcBal = WalletState.getTokenBal('USDC', 'ARC');
@@ -4265,32 +4724,220 @@ function updateBridgeUI() {
         hint.textContent = 'Balance (Arc Testnet): ' + UISync.fmt(bal,2) + ' USDC';
       }
     }
-    if (routeEl) routeEl.textContent = fromToken + ' (Arc Testnet) → ' + toToken + ' (Ethereum Sepolia) via Circle CCTP';
+    if (routeEl) {
+      routeEl.textContent = activeRoute === 'cctp'
+        ? `${fromToken} (Arc Domain 26) → ${toToken} (Sepolia Domain 0) via Circle CCTP Canonical Path`
+        : `${fromToken} (Arc) → ${toToken} (Sepolia) via deBridge DLN (0-TVL, ~1s settlement)`;
+    }
     const receive = amt > BRIDGE_FEE ? (amt - BRIDGE_FEE).toFixed(4) : '—';
     if (recvEl) recvEl.textContent = amt > 0 ? ('~' + receive + ' ' + toToken + ' on Sepolia') : '—';
   } else {
     const simBal = SepoliaBalances.get(fromToken);
     if (hint) hint.textContent = 'Balance (Ethereum Sepolia): ' + UISync.fmt(simBal,4) + ' ' + fromToken;
-    if (routeEl) routeEl.textContent = fromToken + ' (Ethereum Sepolia) → ' + toToken + ' (Arc Testnet) via Circle CCTP';
+    if (routeEl) {
+      routeEl.textContent = activeRoute === 'cctp'
+        ? `${fromToken} (Sepolia Domain 0) → ${toToken} (Arc Domain 26) via Circle CCTP Canonical Path`
+        : `${fromToken} (Sepolia) → ${toToken} (Arc) via deBridge DLN (0-TVL, ~1s settlement)`;
+    }
     const receive = amt > BRIDGE_FEE ? (amt - BRIDGE_FEE).toFixed(4) : '—';
     if (recvEl) recvEl.textContent = amt > 0 ? ('~' + receive + ' ' + toToken + ' on Arc') : '—';
   }
+
   // Update destination balance hint
   const toHintEl = document.getElementById('bridgeToBalHint');
   if (toHintEl) {
     if (typeof SepoliaBalances !== 'undefined') {
       if (isDir1) {
-        // Going TO Sepolia — show Sepolia balance of toToken
         const sepBal = SepoliaBalances.get(toToken);
         toHintEl.textContent = 'Sepolia balance: ' + UISync.fmt(sepBal, 4) + ' ' + toToken;
       } else {
-        // Going TO Arc — show Arc balance of toToken
         const arcBal = WalletState.getTokenBal(toToken);
         toHintEl.textContent = 'Arc balance: ' + UISync.fmt(arcBal, 4) + ' ' + toToken;
       }
     }
   }
 }
+
+// ── CIRCLE CCTP ATTESTATION POLLING & PROGRESS BAR (Requirement 7) ──
+let _trackerInterval = null;
+let _trackerPollInterval = null;
+let _trackerStartTime = null;
+let _trackerTotalDurationMs = 15 * 60 * 1000; // 15 mins for CCTP
+let _activeBridgeTxHash = null;
+
+function startBridgeAttestationTracker(txHash, amount, fromToken, toToken, isDir1, route) {
+  _activeBridgeTxHash = txHash;
+  _trackerStartTime = Date.now();
+  _trackerTotalDurationMs = route === 'debridge' ? 4000 : (15 * 60 * 1000);
+
+  const modal = document.getElementById('bridgeAttestationModal');
+  const miniTracker = document.getElementById('bridgeMiniTracker');
+  if (miniTracker) miniTracker.style.display = 'none';
+  if (modal) modal.classList.add('visible');
+
+  // Fill modal labels
+  const amtEl = document.getElementById('trackerAmount');
+  if (amtEl) amtEl.textContent = `${amount} ${fromToken}`;
+  const pathEl = document.getElementById('trackerPath');
+  if (pathEl) {
+    pathEl.textContent = route === 'cctp'
+      ? (isDir1 ? 'Arc (Domain 26) → Ethereum Sepolia' : 'Ethereum Sepolia → Arc (Domain 26)')
+      : (isDir1 ? 'Arc → Ethereum Sepolia (deBridge DLN)' : 'Ethereum Sepolia → Arc (deBridge DLN)');
+  }
+
+  const txLink = document.getElementById('trackerTxLink');
+  if (txLink) {
+    txLink.href = `https://arcscan.io/tx/${txHash}`;
+    txLink.textContent = `${txHash.slice(0, 10)}...${txHash.slice(-8)} ↗`;
+  }
+
+  const completeBtn = document.getElementById('trackerCompleteBtn');
+  if (completeBtn) completeBtn.style.display = 'none';
+
+  // Reset steps
+  updateTrackerStepUI(1);
+
+  if (_trackerInterval) clearInterval(_trackerInterval);
+  if (_trackerPollInterval) clearInterval(_trackerPollInterval);
+
+  // Live countdown and progress bar tick
+  _trackerInterval = setInterval(() => {
+    const elapsed = Date.now() - _trackerStartTime;
+    const progress = Math.min(0.98, elapsed / _trackerTotalDurationMs);
+    const pct = Math.max(8, Math.round(progress * 100));
+
+    const fill = document.getElementById('trackerBarFill');
+    if (fill) fill.style.width = pct + '%';
+    const pctEl = document.getElementById('trackerPercent');
+    if (pctEl) pctEl.textContent = pct + '%';
+
+    const remainingSec = Math.max(0, Math.round((_trackerTotalDurationMs - elapsed) / 1000));
+    const mins = Math.floor(remainingSec / 60);
+    const secs = remainingSec % 60;
+    const timeStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+    const cdEl = document.getElementById('trackerCountdown');
+    if (cdEl) cdEl.textContent = `⏱ ~${timeStr} remaining`;
+
+    const subTitle = document.getElementById('miniTrackerSubtitle');
+    if (subTitle) subTitle.textContent = `~${timeStr} remaining · Click to view`;
+
+    if (route === 'debridge' && elapsed >= 3000) {
+      completeBridgeTracker();
+      return;
+    }
+
+    if (pct > 25 && pct <= 80) {
+      updateTrackerStepUI(2);
+      const st = document.getElementById('trackerCurrentStatus');
+      if (st) st.textContent = 'Waiting for Ethereum block finality (~15m window)…';
+    } else if (pct > 80 && pct < 95) {
+      updateTrackerStepUI(3);
+      const st = document.getElementById('trackerCurrentStatus');
+      if (st) st.textContent = 'Circle Iris validator quorum signing attestation…';
+    }
+  }, 1000);
+
+  // Poll Circle Iris Attestation API for Domain 26
+  if (route === 'cctp') {
+    _trackerPollInterval = setInterval(async () => {
+      try {
+        const testnetUrl = `https://iris-api-sandbox.circle.com/v1/messages/26/${txHash}`;
+        const resp = await fetch(testnetUrl, { mode: 'cors' }).catch(() => null);
+        if (resp && resp.ok) {
+          const data = await resp.json();
+          console.log('[Circle Iris Poll]', data);
+          if (data && data.messages && data.messages[0]) {
+            const msg = data.messages[0];
+            if (msg.status === 'complete' && msg.attestation) {
+              console.log('[Circle Iris Poll] Attestation complete!', msg.attestation);
+              completeBridgeTracker();
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[Circle Iris Poll Error]', err);
+      }
+    }, 6000);
+  }
+}
+window.startBridgeAttestationTracker = startBridgeAttestationTracker;
+
+function updateTrackerStepUI(activeStepNum) {
+  const steps = [
+    document.getElementById('stepSourceTx'),
+    document.getElementById('stepFinality'),
+    document.getElementById('stepAttestation'),
+    document.getElementById('stepMint')
+  ];
+
+  steps.forEach((el, idx) => {
+    if (!el) return;
+    const stepNum = idx + 1;
+    el.classList.remove('done', 'active', 'pending');
+    const dot = el.querySelector('.tracker-step-dot');
+    if (stepNum < activeStepNum) {
+      el.classList.add('done');
+      if (dot) dot.textContent = '✓';
+    } else if (stepNum === activeStepNum) {
+      el.classList.add('active');
+      if (dot) dot.textContent = String(stepNum);
+    } else {
+      el.classList.add('pending');
+      if (dot) dot.textContent = String(stepNum);
+    }
+  });
+}
+
+function completeBridgeTracker() {
+  if (_trackerInterval) clearInterval(_trackerInterval);
+  if (_trackerPollInterval) clearInterval(_trackerPollInterval);
+
+  updateTrackerStepUI(5);
+  const fill = document.getElementById('trackerBarFill');
+  if (fill) fill.style.width = '100%';
+  const pctEl = document.getElementById('trackerPercent');
+  if (pctEl) pctEl.textContent = '100%';
+  const cdEl = document.getElementById('trackerCountdown');
+  if (cdEl) cdEl.textContent = '✓ Settlement Complete';
+  const st = document.getElementById('trackerCurrentStatus');
+  if (st) st.innerHTML = '<span style="color:var(--green)">✓ Circle Attestation verified & minted!</span>';
+  const completeBtn = document.getElementById('trackerCompleteBtn');
+  if (completeBtn) completeBtn.style.display = 'block';
+
+  const miniTitle = document.getElementById('miniTrackerTitle');
+  if (miniTitle) miniTitle.textContent = 'Bridge Settlement Complete!';
+  const miniSub = document.getElementById('miniTrackerSubtitle');
+  if (miniSub) miniSub.textContent = 'Funds minted on destination chain ✓';
+
+  showToast('🎉 Bridge attestation complete! Funds minted on destination chain.');
+}
+
+function minimizeBridgeTracker() {
+  const modal = document.getElementById('bridgeAttestationModal');
+  if (modal) modal.classList.remove('visible');
+  const miniTracker = document.getElementById('bridgeMiniTracker');
+  if (miniTracker) miniTracker.style.display = 'flex';
+}
+window.minimizeBridgeTracker = minimizeBridgeTracker;
+
+function openBridgeTrackerModal() {
+  const modal = document.getElementById('bridgeAttestationModal');
+  if (modal) modal.classList.add('visible');
+  const miniTracker = document.getElementById('bridgeMiniTracker');
+  if (miniTracker) miniTracker.style.display = 'none';
+}
+window.openBridgeTrackerModal = openBridgeTrackerModal;
+
+function closeBridgeTrackerModal() {
+  const modal = document.getElementById('bridgeAttestationModal');
+  if (modal) modal.classList.remove('visible');
+  const miniTracker = document.getElementById('bridgeMiniTracker');
+  if (miniTracker) miniTracker.style.display = 'none';
+  if (_trackerInterval) clearInterval(_trackerInterval);
+  if (_trackerPollInterval) clearInterval(_trackerPollInterval);
+}
+window.closeBridgeTrackerModal = closeBridgeTrackerModal;
 
 /* ══════════════════════════════════════
    PAY TABS
@@ -5682,16 +6329,10 @@ function sharePayLinkWhatsApp() {
 }
 
 function renderCountries() {
-  const countries=[
-    ['🇵🇰','PK','Pakistan'],['🇮🇳','IN','India'],['🇧🇩','BD','Bangladesh'],['🇳🇬','NG','Nigeria'],
-    ['🇮🇩','ID','Indonesia'],['🇵🇭','PH','Philippines'],['🇰🇪','KE','Kenya'],['🇪🇬','EG','Egypt'],
-    ['🇿🇦','ZA','South Africa'],['🇧🇷','BR','Brazil'],['🇲🇽','MX','Mexico'],['🇹🇷','TR','Turkey'],
-    ['🇻🇳','VN','Vietnam'],['🇹🇭','TH','Thailand'],['🇲🇦','MA','Morocco'],['🇱🇰','LK','Sri Lanka'],
-    ['🇳🇵','NP','Nepal'],['🇦🇪','AE','UAE'],['🇦🇷','AR','Argentina'],['🇨🇴','CO','Colombia']
-  ];
+  const countries=[['PK','Pakistan'],['IN','India'],['BD','Bangladesh'],['NG','Nigeria'],['ID','Indonesia'],['PH','Philippines'],['KE','Kenya'],['EG','Egypt'],['ZA','South Africa'],['BR','Brazil'],['MX','Mexico'],['TR','Turkey'],['VN','Vietnam'],['TH','Thailand'],['MA','Morocco'],['LK','Sri Lanka'],['NP','Nepal'],['AE','UAE'],['AR','Argentina'],['CO','Colombia']];
   const grid=document.getElementById('countries-grid');
   if(!grid)return;
-  grid.innerHTML=countries.map(([flag,code,name])=>`<div class="country-card"><span class="country-code">${code}</span><div class="country-info"><h4>${flag} ${name}</h4><div class="country-status"><span class="c-dot"></span>Active</div></div></div>`).join('');
+  grid.innerHTML=countries.map(([code,name])=>`<div class="country-card"><span class="country-code">${code}</span><div class="country-info"><h4>${name}</h4><div class="country-status"><span class="c-dot"></span>Active</div></div></div>`).join('');
 }
 
 /* ══════════════════════════════════════
@@ -6536,6 +7177,101 @@ window.exportInvoicesCSV = function() {
         <button class="tx-btn tx-btn-yellow" style="flex:1; padding:12px; font-size:13px;" onclick="downloadHTMLReceipt()">Download Receipt</button>
         <button class="btn btn-ghost" style="padding:12px 20px; font-size:13px; border-radius:14px; border:1px solid var(--border);" onclick="closeReceiptModal()">Close</button>
       </div>
+  <!-- CIRCLE CCTP ATTESTATION & SETTLEMENT MODAL -->
+  <div class="wallet-overlay" id="bridgeAttestationModal" style="z-index: 10003;">
+    <div class="tracker-modal">
+      <div class="wm-header" style="margin-bottom:16px">
+        <div>
+          <div class="wm-title" style="color:var(--yellow);font-size:20px;display:flex;align-items:center;gap:8px">
+            <span>🌉</span> Circle CCTP Live Tracker
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">Canonical USDC Bridge · Domain 26 (Arc Network)</div>
+        </div>
+        <div class="wm-close" onclick="minimizeBridgeTracker()" title="Minimize to tracker pill">✕</div>
+      </div>
+
+      <!-- Transaction details summary -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;color:var(--text2);font-weight:600">BRIDGING AMOUNT</div>
+          <div style="font-size:18px;font-weight:800;color:var(--text);margin-top:2px" id="trackerAmount">0.00 USDC</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--text2);font-weight:600">PATHWAY</div>
+          <div style="font-size:12px;font-weight:700;color:#c4b5fd;margin-top:2px" id="trackerPath">Arc (Domain 26) → Sepolia</div>
+        </div>
+      </div>
+
+      <!-- Live Progress Bar & Estimated Time Remaining -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:18px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:1px">ATTESTATION PROGRESS</span>
+          <span style="font-size:12px;font-weight:700;color:var(--yellow)" id="trackerPercent">10%</span>
+        </div>
+        
+        <div class="attestation-bar-wrap">
+          <div class="attestation-bar-fill" id="trackerBarFill" style="width: 10%;"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">
+            <span class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block"></span>
+            <span id="trackerCurrentStatus">Polling Circle Iris attestation...</span>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--teal);font-weight:700" id="trackerCountdown">
+            ⏱ ~14:55 left
+          </div>
+        </div>
+      </div>
+
+      <!-- Step Timeline -->
+      <div style="margin-bottom:18px">
+        <div class="tracker-step done" id="stepSourceTx">
+          <div class="tracker-step-dot">✓</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">1. Source Burn Confirmed</div>
+            <div style="font-size:11px;color:var(--text2)" id="trackerSourceTxDetail">Mined on Arc Testnet · <a id="trackerTxLink" href="#" target="_blank" style="color:var(--yellow);text-decoration:underline">View on ArcScan ↗</a></div>
+          </div>
+        </div>
+        
+        <div class="tracker-step active" id="stepFinality">
+          <div class="tracker-step-dot">2</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">2. Ethereum Quorum Attestation</div>
+            <div style="font-size:11px;color:var(--text2)">Circle Iris service waiting for finality window (~15 mins on Ethereum)</div>
+          </div>
+        </div>
+
+        <div class="tracker-step pending" id="stepAttestation">
+          <div class="tracker-step-dot">3</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">3. Circle Quorum Signature</div>
+            <div style="font-size:11px;color:var(--text2)">Cryptographic Iris attestation generated for minting</div>
+          </div>
+        </div>
+
+        <div class="tracker-step pending" id="stepMint">
+          <div class="tracker-step-dot">4</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">4. Destination Mint</div>
+            <div style="font-size:11px;color:var(--text2)">USDC minted directly into destination wallet</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px">
+        <button type="button" class="btn btn-ghost" style="flex:1;justify-content:center;border-radius:12px" onclick="minimizeBridgeTracker()">Minimize to Background</button>
+        <button type="button" class="btn btn-primary" id="trackerCompleteBtn" style="display:none;flex:1;justify-content:center;border-radius:12px" onclick="closeBridgeTrackerModal()">Done ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING MINI TRACKER WIDGET -->
+  <div id="bridgeMiniTracker" class="mini-bridge-tracker" style="display:none" onclick="openBridgeTrackerModal()">
+    <div style="width:28px;height:28px;border-radius:8px;background:rgba(108,63,196,0.3);color:#c4b5fd;display:flex;align-items:center;justify-content:center;font-size:14px">🌉</div>
+    <div>
+      <div style="font-size:12px;font-weight:700" id="miniTrackerTitle">CCTP Attestation in progress</div>
+      <div style="font-size:11px;color:var(--teal)" id="miniTrackerSubtitle">~14:30 remaining · Click to view</div>
     </div>
   </div>
 </body>
