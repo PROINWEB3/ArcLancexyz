@@ -1,0 +1,24 @@
+// Loads the app sections in their original order.
+import './01-core.js';
+import './02-price-feed.js';
+import './03-wallet-state.js';
+import './04-ui-sync.js';
+import './05-tx-manager.js';
+import './06-wallet-manager.js';
+import './07-wallet-dropdown-receive.js';
+import './08-swap.js';
+import './09-bridge.js';
+import './10-doc-tabs.js';
+import './11-ai-assistant.js';
+import './12-navigation.js';
+import './13-toast-invoice.js';
+import './14-paylink-stats.js';
+import './15-bootstrap.js';
+import './16-rates-username.js';
+import './17-paylink-payer.js';
+import './18-receipts-recurring.js';
+import './20-escrow.js';
+import './21-p2p.js';
+import './22-faucet.js';
+import './23-site.js';
+import './99-cross-chain-onramp.js';
