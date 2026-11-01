@@ -323,8 +323,11 @@ test('assistant guide and docs describe StableFX fixed-rate swaps (USDC and EURC
   const files = ['index.html', ...fs.readdirSync(path.join(ROOT, 'src/legacy')).filter((f) => f.endsWith('.js')).map((f) => 'src/legacy/' + f), 'src/assistant/knowledge.ts'];
   for (const f of files) {
     const text = fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*|keywords:)/.test(l)).join('\n');
-    for (const bad of [/Arc DEX/i, /price impact/i, /Swap Kit/i, /USDT/, /Tether/i]) assert.ok(!bad.test(text), `${f} still has ${bad}`);
+    // The assistant may talk about USDT and Tether as general crypto knowledge and for live prices; the app itself does not support them.
+    const bads = f === 'src/assistant/knowledge.ts' ? [/Arc DEX/i, /price impact/i, /Swap Kit/i] : [/Arc DEX/i, /price impact/i, /Swap Kit/i, /USDT/, /Tether/i];
+    for (const bad of bads) assert.ok(!bad.test(text), `${f} still has ${bad}`);
   }
+  for (const q of ['how do I swap', 'how do I send usdc', 'how does the bridge work']) assert.ok(!/USDT|Tether/i.test(answer(q, { ...ctx, bridgeNetworks: ['Arc Testnet'], eurcNetworks: ['Arc Testnet'] }).text), `${q} must not mention USDT`);
 });
 
 // ── remaining audit items: text, receipts, transaction toasts, approximate EURC values ──
