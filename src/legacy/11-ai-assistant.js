@@ -2,7 +2,9 @@
 // Ported verbatim from the original single-file index.html.
 import { publish } from './publish.js';
 import { ARC, ESCROW_ADDRESS, P2P_ADDRESS, BRIDGE_CHAINS } from '../config/chain-config';
-import { answer, looksLikeSecret, FALLBACK_NOTE, NO_MATCH_TEXT } from '../assistant/knowledge';
+import { answer, looksLikeSecret, isAdviceQuestion, noMatchText, FALLBACK_NOTE, LANGUAGE_NOTE, ASSISTANT_UI } from '../assistant/knowledge';
+import { detectLanguage } from '../assistant/language';
+import { answerPrice, priceCopy } from '../assistant/prices';
 /* ══════════════════════════════════════
    AI CHAT
 ══════════════════════════════════════ */
@@ -591,7 +593,7 @@ async function askService(text) {
   const resp = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: [...aiHistory.slice(-8), { role: 'user', content: text }], knownAddresses: known }),
+    body: JSON.stringify({ messages: [...aiHistory.slice(-8), { role: 'user', content: text }], knownAddresses: known, language: detectLanguage(text).lang }),
   });
   if (resp.status === 503 || resp.status === 404 || resp.status === 405) { aiMode = 'local'; sessionStorage.setItem('arclance_ai_mode', 'local'); throw new Error('not_configured'); }
   if (!resp.ok) throw new Error('service_error');
@@ -602,27 +604,36 @@ async function askService(text) {
 }
 
 // Local answers are app-written content (trusted HTML). Service answers are escaped before display.
-function localReply(text) {
-  if (/[\u0600-\u06ff]/.test(text)) return getLocalReply(text); // Urdu answers from the original guide
-  const a = answer(text, assistantContext());
+function localReply(text, lang) {
+  const a = answer(text, assistantContext(), lang);
   if (a.matched) return a.text;
-  // Country guides and the fee comparison still come from the original guide
-  if (/pakistan|india|bangladesh|nigeria|compare fees|fees comparison|paypal|fiverr/i.test(text)) return getLocalReply(text);
-  return NO_MATCH_TEXT;
+  // Country guides and the fee comparison still come from the original English guide
+  if (lang === 'en' && /pakistan|india|bangladesh|nigeria|compare fees|fees comparison|paypal|fiverr/i.test(text)) return getLocalReply(text);
+  return noMatchText(lang);
 }
 
+// Topics that are always answered inside the browser: secrets, balances, rates, advice and transaction status never go to a service.
+const LOCAL_ONLY = ['secrets', 'balance', 'rates', 'advice', 'tx-status'];
+
 async function getReply(text) {
-  // Secrets, balances and rates are always answered locally: nothing sensitive leaves the browser and nothing is guessed.
-  const first = looksLikeSecret(text) ? { topic: 'secrets', matched: true } : answer(text, assistantContext());
-  if (first.matched && ['secrets', 'balance', 'rates'].includes(first.topic)) return { text: first.text ?? answer(text, assistantContext()).text, note: '', trusted: true };
+  const { lang, unclear } = detectLanguage(text);
+  const langNote = unclear ? LANGUAGE_NOTE : '';
+  // 1. Live prices come only from the public price API. They are never guessed and never sent to an AI service.
+  const price = await answerPrice(text, lang);
+  if (price !== null) return { text: isAdviceQuestion(text) ? `${price}\n${priceCopy(lang).notAdvice}` : price, note: langNote, trusted: true };
+  // 2. Secrets, balances, rates, advice and transaction status are answered locally.
+  const first = looksLikeSecret(text) ? { topic: 'secrets', matched: true, text: answer(text, assistantContext(), lang).text } : answer(text, assistantContext(), lang);
+  if (first.matched && LOCAL_ONLY.includes(first.topic)) return { text: first.text, note: langNote, trusted: true };
+  // 3. The AI service, when a server-side key is configured.
   if (aiMode !== 'local') {
     try {
       const reply = await askService(text);
       aiHistory.push({ role: 'user', content: text }, { role: 'assistant', content: reply });
-      return { text: reply, note: '', trusted: false };
+      return { text: reply, note: langNote, trusted: false };
     } catch { /* fall through to the built-in guide */ }
   }
-  return { text: localReply(text), note: FALLBACK_NOTE, trusted: true };
+  // 4. The built-in guide, in the user's language.
+  return { text: localReply(text, lang), note: [FALLBACK_NOTE, langNote].filter(Boolean).join(' '), trusted: true };
 }
 
 let chatBusy = false;
@@ -668,8 +679,27 @@ function sendSuggested(text) {
 }
 
 function clearChat() {
-  document.getElementById('chat-messages').innerHTML='<div class="msg bot">Hey! I\'m your <strong>ArcLance AI</strong> assistant.<br><br>Ask me anything about wallet setup, Arc Testnet, USDC payments, swaps, bridges, or invoices.</div>';
+  document.getElementById('chat-messages').innerHTML = '<div class="msg bot">' + ASSISTANT_UI.welcomeHtml + '</div>';
 }
+
+// The assistant's own screen text is English. The page markup still has three Urdu suggestion chips, so they are replaced here.
+function setupAssistantUi() {
+  const pills = document.querySelector('.suggested-pills');
+  if (pills) {
+    pills.querySelectorAll('.pill').forEach((b) => { if (/[\u0600-\u06ff]/.test((b.getAttribute('onclick') || '') + b.textContent)) b.remove(); });
+    ASSISTANT_UI.chips.forEach((c) => {
+      if ([...pills.querySelectorAll('.pill')].some((b) => b.textContent.trim() === c.label)) return;
+      const b = document.createElement('button');
+      b.className = 'pill'; b.type = 'button'; b.textContent = c.label;
+      b.addEventListener('click', () => sendSuggested(c.query));
+      pills.appendChild(b);
+    });
+  }
+  const msgs = document.getElementById('chat-messages');
+  const only = msgs && msgs.children.length === 1 && msgs.firstElementChild.classList.contains('bot');
+  if (only && /^\s*Hey!/.test(msgs.firstElementChild.textContent)) clearChat();
+}
+document.addEventListener('DOMContentLoaded', setupAssistantUi);
 
 function clearChatHistory() {
   ChatMemory.clearHistory();
