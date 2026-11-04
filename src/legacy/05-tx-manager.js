@@ -386,6 +386,7 @@ const TxManager = (() => {
     const amount = parseFloat(inv.amount) || 0;
     if (amount <= 0) { showToast('Invalid invoice amount'); return; }
     if (WalletState.getTokenBal('USDC', 'ARC') < amount + 0.12) { showToast(`Insufficient USDC. Need ${(amount+0.12).toFixed(2)} USDC`); return; }
+    if (!(await confirmSendSummary({ token: 'USDC', amount, recipient: inv.walletAddr || WalletState.getAddr() }))) return;
     try {
       showToast('Sign invoice payment in your wallet…');
       const provider = WalletManager.getProvider(); if (!provider) throw new Error("No wallet connected");

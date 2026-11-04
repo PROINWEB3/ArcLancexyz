@@ -132,7 +132,7 @@ function notDeployed() {
   return `<div class="card animate" style="max-width:640px;margin:0 auto;width:100%">
     <div class="section-header"><div class="section-title">Milestone Escrow</div><span class="badge badge-yellow">Arc Testnet</span></div>
     <div style="text-align:center;padding:28px 10px"><div style="font-size:15px;font-weight:700;margin-bottom:8px">${NOT_DEPLOYED_MESSAGE}</div>
-    <div style="font-size:12px;color:var(--text2);line-height:1.7">Pay freelancers milestone by milestone, with the money held safely until you approve the work. The escrow contract is not live yet, so there is nothing to show.</div></div></div>`;
+    <div style="font-size:12px;color:var(--text2);line-height:1.7">Pay freelancers milestone by milestone, with the money held in a contract until you approve and release it. The escrow contract is not live yet, so there is nothing to show.</div></div></div>`;
 }
 
 function tabsHtml() {
@@ -180,7 +180,7 @@ function formHtml() {
     <div class="form-group"><label class="form-label">Title</label><input class="form-input" data-es-f="title" maxlength="80" placeholder="Website redesign" value="${esc(f.title)}"></div>
     <div class="form-group"><label class="form-label">Milestones (1 to ${MAX_MILESTONES})</label>${ms}
       ${f.milestones.length < MAX_MILESTONES ? '<button type="button" class="btn btn-ghost btn-sm" data-es-add="1">+ Add milestone</button>' : ''}</div>
-    <div class="form-group"><label class="form-label">Auto-release after (days)</label><input class="form-input" data-es-f="days" inputmode="numeric" value="${esc(f.days)}"><div style="font-size:11px;color:var(--text2);margin-top:6px">If you do nothing this many days after a delivery, the payment is released to the freelancer.</div></div>
+    <div class="form-group"><label class="form-label">Auto-release after (days)</label><input class="form-input" data-es-f="days" inputmode="numeric" value="${esc(f.days)}"><div style="font-size:11px;color:var(--text2);margin-top:6px">After the auto-release delay, anyone can release the payment to the freelancer. The client can still dispute before that.</div></div>
     <div class="info-box"><div class="info-row"><span class="k">Milestones</span><span class="v">${f.milestones.length}</span></div>
       <div class="info-row"><span class="k">Total you deposit</span><span class="v yellow">${money(total, f.token)}</span></div>
       <div class="info-row"><span class="k">Auto-release</span><span class="v">${esc(f.days)} days after delivery</span></div></div>
@@ -208,8 +208,8 @@ function detailHtml() {
     const timeline = [
       timelineStep('done', 1, 'Funded', at(e.createdAt)),
       timelineStep(m.status >= 1 && !(disputed && !m.deliveredAt) ? 'done' : 'active', 2, 'Delivered', m.deliveredAt ? `${at(m.deliveredAt)}${m.deliveryNote ? '<br>Note: ' + esc(m.deliveryNote) : ''}` : 'Waiting for the freelancer'),
-      timelineStep(m.status >= 2 && m.status !== 4 ? 'done' : m.status === 1 ? 'active' : 'pending', 3, 'Approved', m.approvedAt ? at(m.approvedAt) : autoIn ? `Auto-release in about ${autoIn} day${autoIn > 1 ? 's' : ''} if not approved` : ''),
-      timelineStep(m.status === 3 ? 'done' : m.status === 2 || auto ? 'active' : 'pending', 4, 'Released', m.releasedAt ? at(m.releasedAt) : auto ? 'Auto-release reached. Anyone can release.' : ''),
+      timelineStep(m.status >= 2 && m.status !== 4 ? 'done' : m.status === 1 ? 'active' : 'pending', 3, 'Approved', m.approvedAt ? at(m.approvedAt) : autoIn ? `Anyone can release after the auto-release delay (about ${autoIn} day${autoIn > 1 ? 's' : ''}). The client can still dispute before that.` : ''),
+      timelineStep(m.status === 3 ? 'done' : m.status === 2 || auto ? 'active' : 'pending', 4, 'Released', m.releasedAt ? at(m.releasedAt) : auto ? 'After the auto-release delay, anyone can release the payment to the freelancer. The client can still dispute before that.' : ''),
     ].join('');
     const btn = (label, attr, cls = 'btn-primary') => `<button type="button" class="btn btn-sm ${cls}" ${attr} ${es.busy ? 'disabled' : ''}>${label}</button>`;
     let actions = '';
@@ -221,7 +221,7 @@ function detailHtml() {
     else if (auto && !isClient) actions = btn('Release (auto-release reached)', `data-es-release="${i}"`);
     return `<div style="border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div style="font-size:13px;font-weight:700">Milestone ${i + 1}: ${esc(m.description)}</div><div style="display:flex;align-items:center;gap:8px"><b>${money(m.amount, sym)}</b>${statusBadge(m.status === 3 ? 'ok' : m.status === 4 ? 'fail' : 'pending', MILESTONE_STATUS[m.status] || '?')}</div></div>
-      ${timeline}${actions ? `<div style="margin-top:10px">${actions}</div>` : ''}</div>`;
+      ${timeline}${actions ? `<div style="margin-top:10px">${actions}</div>` : ''}${actions.includes('data-es-dispute') ? `<div style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5">Disputes are decided by a single arbiter address. This is a test deployment.</div>` : ''}</div>`;
   }).join('');
   return `<div class="card animate" style="max-width:700px;margin:0 auto;width:100%">
     <div class="section-header"><div class="section-title">${esc(e.title)}</div><button type="button" class="btn btn-ghost btn-sm" data-es-back="1">Back</button></div>

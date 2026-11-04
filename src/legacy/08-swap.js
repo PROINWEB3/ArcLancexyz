@@ -450,7 +450,7 @@ function update() {
   else if (sw.quoteErr) paintNotice(sw.quoteErr, 'error');
   else if (sw.info) paintNotice(sw.info, 'info');
   else if (sw.moved) paintNotice('The quote changed to a worse rate. Review the new amount, then press "Accept new price".', 'info');
-  else if (sw.quote && sw.allowance !== null && sw.allowance < requiredAllowance(sw.quote)) paintNotice(`Step 1 of 2: approve ${sw.tokenIn} for the Permit2 contract (up to ${fmt6(requiredAllowance(sw.quote))} ${sw.tokenIn}). Step 2 signs and sends the swap.`, 'info');
+  else if (sw.quote && sw.allowance !== null && sw.allowance < requiredAllowance(sw.quote)) paintNotice(`Step 1 of 2: approve ${sw.tokenIn} for the Permit2 contract (up to ${fmt6(requiredAllowance(sw.quote))} ${sw.tokenIn}). Step 2 signs and sends the swap. Approving lets the Permit2 contract move up to that amount of ${sw.tokenIn} from your wallet. Check the amount in your wallet before you confirm.`, 'info');
   else $('swapNotice').style.display = 'none';
 
   const st = buttonState();

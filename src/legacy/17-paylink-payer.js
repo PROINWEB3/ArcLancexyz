@@ -2,6 +2,7 @@
 // Ported verbatim from the original single-file index.html.
 import { publish } from './publish.js';
 import { parsePayPath } from './lib-paylink.js';
+import { ARC } from '../config/chain-config';
 // 5. Toggle Recipient inputs on Send
 function toggleRecipientType(type) {
   const label = document.getElementById('recipientLabel');
@@ -38,16 +39,18 @@ function updateSendLocalCurrency() {
 // 7. Hash routing for Pay Link payments arclance.io/pay/username/amount
 // 7. Hash routing for Pay Link payments arclance.io/pay/walletAddress/amount/service
 function handleHashPaymentRouting() {
-  const link = parsePayPath(window.location.pathname, window.location.hash);
+  const link = parsePayPath(window.location.pathname, window.location.hash, window.location.search);
   if (!link) return;
   // The target is a wallet address, or a username saved in this browser
   let walletAddress = link.target;
+  let displayName = link.name; // from ?u=: shown only, never used to find the recipient
   if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+    displayName = link.target; // an older username link: it resolved on this device
     walletAddress = typeof resolveUsername === 'function' ? resolveUsername(link.target) : null;
     if (!walletAddress) { setTimeout(() => showToast('This username is not known on this device. Ask the sender for a link with a wallet address.'), 500); return; }
   }
   if (!(link.amount > 0)) { setTimeout(() => showToast('This link has no amount. Ask the sender for a link with an amount.'), 500); return; }
-  setTimeout(() => openPayLinkPayerView(walletAddress, link.amount, link.label), 500);
+  setTimeout(() => openPayLinkPayerView(walletAddress, link.amount, link.label, displayName), 500);
 }
 
 // 8. Open Payer Modal View
@@ -55,7 +58,7 @@ let currentPayLinkWalletAddress = '';
 let currentPayLinkAmount = 0;
 let currentPayLinkService = '';
 
-function openPayLinkPayerView(walletAddress, amount, service) {
+function openPayLinkPayerView(walletAddress, amount, service, displayName) {
   currentPayLinkWalletAddress = walletAddress;
   currentPayLinkAmount = amount;
   currentPayLinkService = service;
@@ -68,10 +71,16 @@ function openPayLinkPayerView(walletAddress, amount, service) {
   document.getElementById('pl-modal-amount').textContent = amount.toFixed(2) + ' USDC';
   document.getElementById('pl-modal-service').textContent = 'for ' + service;
   
+  // Before anything is signed: the full recipient address and the network, in plain sight.
   const addrEl = document.getElementById('pl-modal-addr');
   if (addrEl) {
     addrEl.textContent = walletAddress;
-    addrEl.style.color = 'var(--text3)';
+    addrEl.style.cssText += ';color:var(--text);font-family:"JetBrains Mono",monospace;font-size:12px;word-break:break-all;line-height:1.5';
+    let info = document.getElementById('pl-modal-network');
+    if (!info) { info = document.createElement('div'); info.id = 'pl-modal-network'; info.style.cssText = 'font-size:11px;color:var(--text2);margin-top:6px;line-height:1.6;text-align:center'; addrEl.insertAdjacentElement('afterend', info); }
+    const safe = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    info.innerHTML = `Recipient wallet (full address) above. Network: <strong style="color:var(--text)">${safe(ARC.name)}</strong> (chain ID ${ARC.chainId}). Check the address before you pay.` +
+      (displayName ? `<br>Name in the link: <strong style="color:var(--text)">${safe(displayName)}</strong> (a label only, not verified: the address above is what you pay).` : '');
   }
   
   // Calculate exchange rates

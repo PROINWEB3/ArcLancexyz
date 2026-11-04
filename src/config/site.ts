@@ -3,6 +3,8 @@ export const SITE = {
   name: 'ArcLance',
   url: 'https://arclance.xyz',
   github: 'https://github.com/PROINWEB3',
+  /** The ArcLance code repository. */
+  repo: 'https://github.com/PROINWEB3/ArcLancexyz',
   x: 'https://x.com/PROinWeb3',
   xHandle: '@PROinWeb3',
   /** Official Arc documentation. */

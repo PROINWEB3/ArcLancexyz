@@ -5,7 +5,7 @@ import { esc, $, fmtAmount, netIcon, tokIcon, bindMenu, menuBoxStyle, menuItemSt
 import { toUnits, fromUnits, waitForReceipt, switchWalletChain, walletChainId, shortAddress, errorMessage } from '../lib/evm';
 import {
   encodeApprove, encodeDepositForBurn, encodeReceiveMessage, readBalance, readAllowance,
-  getStandardFeeBps, maxFeeFor, getAttestation, isNonceUsed, spenderFor, getCctpxQuote, encodeCctpxTransfer,
+  getStandardFeeBps, maxFeeFor, minimumBridgeAmount, getAttestation, isNonceUsed, spenderFor, getCctpxQuote, encodeCctpxTransfer,
 } from '../lib/cctp';
 import { loadBridgeHistory, saveBridgeRecord, isUnfinished } from '../lib/bridge-store';
 
@@ -28,6 +28,7 @@ const br = {
   allowance: null, allowanceKey: '',
   feeBps: null, feeErr: '', feeKey: '',
   cctpxFee: null,
+  lastApprove: null,
   active: null, msg: '', msgKind: 'info', built: false,
 };
 const pollers = new Set();
@@ -35,6 +36,12 @@ const pollers = new Set();
 const chainOf = (key) => getBridgeChain(key);
 const provider = () => WalletManager.getProvider();
 const me = () => WalletState.getAddr();
+
+// Said when a step fails after the burn already succeeded: the burn is confirmed (the record moved past "burn"), so the funds are safe and the transfer can continue.
+function recoveryNote(rec, stepName, reason, nextAction) {
+  const from = chainOf(rec.from); const tk = rec.token || 'USDC';
+  return `Your ${rec.amount} ${tk} was already sent from ${from ? from.name : 'the first network'}, and that cannot be undone. The ${stepName} step did not finish: ${reason} Nothing is lost: the transfer is saved in Bridge history. ${nextAction || 'Resume or Details continues from this step.'}`;
+}
 
 function setMsg(text, kind = 'info') { br.msg = text; br.msgKind = kind; renderMsg(); }
 
@@ -75,6 +82,7 @@ function ensureTokenSupported() {
 function build() {
   const root = $('bridge-root');
   if (!root) return false;
+  if (br.built) return true; // the page is built once; building again would attach every click handler twice
   root.innerHTML = `
   <div style="max-width:520px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:18px">
     <div class="card animate" style="background:linear-gradient(135deg,#0a0d20,#0e0a20);border-color:rgba(108,63,196,0.18)">
@@ -120,11 +128,13 @@ function build() {
 
       <div class="info-box" style="margin-top:16px">
         <div class="info-row"><span class="k">Estimated time</span><span class="v" id="br-time">—</span></div>
+        <div class="info-row"><span class="k">Transfer speed</span><span class="v" id="br-speed" style="text-align:right">—</span></div>
         <div class="info-row"><span class="k">Bridge fee</span><span class="v green" id="br-fee">—</span></div>
 
         <div class="info-row"><span class="k">You receive</span><span class="v yellow" id="br-receive">—</span></div>
         <div class="info-row"><span class="k">Gas you need</span><span class="v" id="br-gas" style="text-align:right">—</span></div>
       </div>
+      <div id="br-hint" style="display:none"></div>
       <div id="br-msg" style="display:none"></div>
       <button type="button" class="tx-btn tx-btn-yellow" id="br-btn" style="margin-top:14px"><span id="br-btn-content">Connect Wallet</span></button>
       <div style="font-size:11px;color:var(--text2);margin-top:10px">Need test USDC? <a href="${ARC.faucetUrl}" target="_blank" rel="noopener" style="color:var(--yellow)">Circle faucet</a></div>
@@ -155,7 +165,9 @@ function build() {
     const view = e.target.closest('[data-view]');
     if (view) { viewTransfer(view.dataset.view); return; }
     const mint = e.target.closest('[data-mint]');
-    if (mint) { doMint(mint.dataset.mint); }
+    if (mint) { doMint(mint.dataset.mint); return; }
+    const retry = e.target.closest('[data-br-retry]');
+    if (retry) { e.preventDefault(); br.feeKey = ''; br.feeErr = ''; br.feeBps = null; br.cctpxFee = null; update(); }
   });
   $('br-amount').addEventListener('input', (e) => {
     const v = e.target.value.replace(',', '.');
@@ -220,6 +232,8 @@ async function refreshRouteData() {
 }
 
 const feeReady = () => (br.token === 'EURC' ? br.cctpxFee !== null : br.feeBps !== null);
+// Smallest USDC amount the live fee allows (0n = no rule; null = the fee alone is as large as the amount). EURC pays its fee in gas, so it has no such rule.
+const minAmount = () => (br.token === 'EURC' || br.feeBps === null ? 0n : minimumBridgeAmount(br.feeBps));
 
 function buttonState() {
   const from = chainOf(br.from); const to = chainOf(br.to);
@@ -232,6 +246,9 @@ function buttonState() {
   if (br.balance !== null && amt > br.balance) return { label: 'Insufficient balance', disabled: true };
   if (br.busy) return { label: 'Working…', disabled: true };
   if (!feeReady()) return { label: br.feeErr ? 'Fee unavailable' : 'Loading fee…', disabled: true };
+  const min = minAmount();
+  if (min === null) return { label: 'Fee too high for this route', disabled: true };
+  if (amt < min) return { label: 'Amount too small', disabled: true };
   if (br.walletChain && br.walletChain !== from.chainIdHex.toLowerCase()) return { label: `Switch to ${from.name}`, disabled: false, action: 'switch' };
   if (br.allowance !== null && br.allowance < amt) return { label: `Approve ${br.token}`, disabled: false, action: 'approve' };
   return { label: `Bridge to ${to.name}`, disabled: false, action: 'burn' };
@@ -277,6 +294,7 @@ async function doApprove() {
   if (receipt.status !== 'success') { if (typeof showToast === 'function') showToast(`${tok} approval: failed`, { url: chainTxUrl(from, hash), label: 'View on explorer' }); throw new Error('The approval failed on the network.'); }
   if (typeof showToast === 'function') showToast(`${tok} approved`, { url: chainTxUrl(from, hash), label: 'View on explorer' });
   br.allowance = await readAllowance(from, me(), tok);
+  br.lastApprove = { key: `${br.from}:${tok}:${me()}`, tx: hash };
   setMsg('Approved. Now press Bridge.', 'ok');
 }
 
@@ -292,13 +310,17 @@ async function doBurn() {
     const data = encodeCctpxTransfer({ amount: amt, destinationDomain: to.cctpDomain, recipient: me(), quote });
     burnTx = await sendTx({ to: CCTPX.crossChainTokenService, data, value: '0x' + quote.feeTotalAmount.toString(16) });
   } else {
+    const min = minAmount();
+    if (min === null || amt < min) throw new Error(min === null ? 'The fee on this route is as large as the amount, so it cannot be bridged right now.' : `The amount is too small. Enter at least ${fromUnits(min, 6, 6)} USDC.`);
     const maxFee = maxFeeFor(amt, br.feeBps);
     const data = encodeDepositForBurn({ amount: amt, destinationDomain: to.cctpDomain, recipient: me(), burnToken: from.usdc, maxFee });
     burnTx = await sendTx({ to: from.tokenMessengerV2, data });
   }
+  const approveTx = br.lastApprove && br.lastApprove.key === `${br.from}:${tok}:${me()}` ? br.lastApprove.tx : undefined;
+  br.lastApprove = null;
   const rec = {
     id: burnTx, from: br.from, to: br.to, token: tok, amount: fromUnits(amt, 6, 6), sender: me(), recipient: me(),
-    stage: 'burn', burnTx, createdAt: Date.now(), updatedAt: Date.now(),
+    stage: 'burn', burnTx, ...(approveTx ? { approveTx } : {}), createdAt: Date.now(), updatedAt: Date.now(),
   };
   saveBridgeRecord(me(), rec);
   if (typeof showToast === 'function') showToast(`${tok} transfer: pending`, { url: chainTxUrl(from, burnTx), label: 'View on explorer' });
@@ -329,6 +351,7 @@ function startPolling(id) {
   if (pollers.has(id)) return;
   pollers.add(id);
   setMsg('Waiting for Circle to confirm your transfer. You can leave this page and come back with Resume.');
+  let fails = 0;
   (async () => {
     try {
       for (;;) {
@@ -336,7 +359,11 @@ function startPolling(id) {
         if (!rec || rec.stage === 'complete' || rec.stage === 'failed') break;
         const from = chainOf(rec.from);
         let att;
-        try { att = await getAttestation(from.cctpDomain, rec.burnTx); } catch { att = { status: 'pending' }; }
+        try { att = await getAttestation(from.cctpDomain, rec.burnTx); fails = 0; } catch {
+          att = { status: 'pending' };
+          fails += 1;
+          if (fails === 5) setMsg(recoveryNote(rec, 'Circle confirmation', "Circle's service is not answering right now. This page keeps asking, and you can also leave and press Resume later."), 'info');
+        }
         if (att.status === 'complete') {
           saveBridgeRecord(rec.sender, { ...rec, stage: 'mint', message: att.message, attestation: att.attestation, eventNonce: att.eventNonce });
           renderAll();
@@ -370,14 +397,20 @@ async function doMint(id) {
     renderAll();
     const receipt = await waitForReceipt(to.rpcUrl, hash);
     if (!receipt) { setMsg('The receive transaction is still pending. Press Resume to check it later.', 'info'); return; }
-    if (receipt.status !== 'success') { if (typeof showToast === 'function') showToast(`Receive on ${to.name}: failed`, { url: chainTxUrl(to, hash), label: 'View on explorer' }); throw new Error('The receive transaction failed on the network. You can try again.'); }
-    saveBridgeRecord(rec.sender, { ...rec, stage: 'complete', mintTx: hash });
+    if (receipt.status !== 'success') {
+      if (typeof showToast === 'function') showToast(`Receive on ${to.name}: failed`, { url: chainTxUrl(to, hash), label: 'View on explorer' });
+      // Keep the signed message so the receive button comes back; the failed attempt stays visible in the note.
+      saveBridgeRecord(rec.sender, { ...rec, stage: 'mint', mintTx: undefined, error: 'The last receive attempt failed on the network.' });
+      renderAll();
+      throw new Error('The receive transaction failed on the network. You can try again.');
+    }
+    saveBridgeRecord(rec.sender, { ...rec, stage: 'complete', mintTx: hash, error: undefined });
     if (typeof showToast === 'function') showToast(`${rec.token || 'USDC'} received on ${to.name}`, { url: chainTxUrl(to, hash), label: 'View on explorer' });
     setMsg(`Done. ${rec.amount} ${rec.token || 'USDC'} arrived on ${to.name}.`, 'ok');
     WalletState.loadPeerBalances(rec.sender);
     WalletState.loadFromChain(rec.sender);
   } catch (err) {
-    setMsg(errorMessage(err), 'error');
+    setMsg(recoveryNote(rec, 'receive', errorMessage(err), `Press "Receive on ${to.name}" to try again, or Resume in Bridge history.`), 'error');
   } finally {
     br.busy = false; renderAll(); update();
   }
@@ -423,12 +456,12 @@ function renderTracker() {
   const burnDone = ['attestation', 'mint', 'complete'].includes(s);
   const attDone = ['mint', 'complete'].includes(s) && !!rec.attestation || s === 'complete';
   const steps = [
-    stepHtml('done', 1, 'Approve ' + esc(tk), 'Allowance set on ' + esc(from.name)),
+    stepHtml('done', 1, 'Approve ' + esc(tk), (rec.approveTx ? 'Allowance set on ' + esc(from.name) + '.' : 'Allowance ready on ' + esc(from.name) + '.') + link(from, rec.approveTx)),
     stepHtml(burnDone ? 'done' : s === 'failed' ? 'pending' : 'active', 2, 'Send ' + esc(tk) + ' from ' + esc(from.name), (burnDone ? 'Confirmed.' : s === 'failed' ? esc(rec.error || 'Failed.') : 'Waiting for the network to confirm…') + link(from, rec.burnTx)),
-    stepHtml(attDone ? 'done' : s === 'attestation' ? 'active' : 'pending', 3, 'Circle confirms the transfer', attDone ? 'Confirmed by Circle.' : 'About ' + esc(from.attestationTime) + '. You can leave and come back.'),
+    stepHtml(attDone ? 'done' : s === 'attestation' ? 'active' : 'pending', 3, 'Circle confirms the transfer', attDone ? 'Confirmed by Circle.' : 'Timing varies by route. You can leave and come back.'),
     stepHtml(s === 'complete' ? 'done' : s === 'mint' ? 'active' : 'pending', 4, 'Receive on ' + esc(to.name),
       s === 'complete' ? 'Arrived.' + link(to, rec.mintTx)
-        : s === 'mint' ? (rec.mintTx ? 'Waiting for ' + esc(to.name) + ' to confirm…' + link(to, rec.mintTx) : `<button class="btn btn-sm btn-primary" style="margin-top:6px" data-mint="${esc(rec.id)}">Receive on ${esc(to.name)}</button>`)
+        : s === 'mint' ? (rec.mintTx ? 'Waiting for ' + esc(to.name) + ' to confirm…' + link(to, rec.mintTx) : (rec.error ? esc(rec.error) + '<br>' : '') + `<button class="btn btn-sm btn-primary" style="margin-top:6px" data-mint="${esc(rec.id)}">Receive on ${esc(to.name)}</button>`)
         : 'Unlocks after Circle confirms.'),
   ];
   $('br-track').innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;font-weight:600">${netIcon(rec.from, 22, from.name)}<span>${esc(from.name)}</span><span style="color:var(--text2)">→</span>${netIcon(rec.to, 22, to.name)}<span>${esc(to.name)}</span><span style="margin-left:auto">${tokIcon(tk, 18)} ${esc(rec.amount)} ${esc(tk)}</span></div>${steps.join('')}`;
@@ -475,11 +508,13 @@ function update() {
   $('br-to-note').textContent = connected ? `You receive on ${shortAddress(me())} (your wallet).` : 'You receive on your connected wallet address.';
 
   const amt = toUnits(br.amount, 6);
-  $('br-time').textContent = `About ${from.attestationTime}`;
+  $('br-time').textContent = 'Varies by route. Follow the explorer links.';
+  // Always Standard Transfer. Where the docs list no Fast Transfer for the source network, Standard is the only speed there is.
+  $('br-speed').textContent = from.fastTransfer ? 'Standard transfer' : `Standard transfer (the only speed from ${from.name})`;
   const tk = br.token;
   const nat = from.nativeCurrency.symbol;
   let fee = 0n;
-  if (!feeReady()) $('br-fee').textContent = br.feeErr ? 'Could not load. Try changing the route.' : 'Loading…';
+  if (!feeReady()) { if (br.feeErr) $('br-fee').innerHTML = 'Fee unavailable, <a href="#" data-br-retry="1" style="color:var(--yellow)">retry</a>'; else $('br-fee').textContent = 'Loading…'; }
   else if (tk === 'EURC') $('br-fee').textContent = br.cctpxFee === 0n ? '0 (standard transfer)' : `${fromUnits(br.cctpxFee, 18, 6)} ${nat} (paid in gas token)`;
   else if (br.feeBps === 0) $('br-fee').textContent = '0 USDC (standard transfer)';
   else $('br-fee').textContent = `Up to ${fromUnits(maxFeeFor(amt > 0n ? amt : 1000000n, br.feeBps), 6, 6)} USDC`;
@@ -487,11 +522,16 @@ function update() {
   $('br-receive').textContent = amt > 0n ? `${fromUnits(amt > fee ? amt - fee : 0n, 6, 6)} ${tk} on ${to.name}` : '—';
   $('br-gas').innerHTML = `${esc(from.nativeCurrency.symbol)} on ${esc(from.name)}<br>${esc(to.nativeCurrency.symbol)} on ${esc(to.name)}`;
 
+  const hint = $('br-hint'); const min = minAmount();
+  if (tk === 'USDC' && feeReady() && amt > 0n && (min === null || amt < min)) {
+    hint.style.cssText = 'display:block;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--red);font-size:12px;line-height:1.6';
+    hint.textContent = min === null ? 'The fee on this route is as large as the amount, so it cannot be bridged right now.' : `Enter at least ${fromUnits(min, 6, 6)} USDC. The bridge fee for this route must be smaller than the amount you send.`;
+  } else hint.style.display = 'none';
   const st = buttonState();
   const btn = $('br-btn');
   btn.disabled = st.disabled; btn.style.opacity = st.disabled ? '.55' : ''; btn.style.cursor = st.disabled ? 'not-allowed' : '';
   $('br-btn-content').innerHTML = br.busy ? `<div class="spinner"></div> ${esc(st.label)}` : esc(st.label);
-  if (from.slowSource && !br.msg) setMsg(`${from.name} takes ${from.attestationTime} to confirm transfers sent from it. Receiving on ${from.name} is quick.`, 'info');
+  if (from.slowSource && !br.msg) setMsg(`Transfers sent from ${from.name} can take much longer to confirm than from other networks. Follow the explorer links for the status.`, 'info');
   renderAll();
   refreshWalletChain().then(() => { const s2 = buttonState(); if (s2.label !== st.label) $('br-btn-content').textContent = s2.label; });
   refreshRouteData();

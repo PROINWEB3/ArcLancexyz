@@ -107,6 +107,13 @@ export interface BridgeChain {
   /** True when the docs say attestation can take hours. */
   slowSource?: boolean
   isArc?: boolean
+  /** Exact Circle App Kit chain identifier (checked against the SDK's Blockchain enum in the tests). */
+  sdkChain: string
+  /**
+   * True when the CCTP docs list Fast Transfer as available from this chain as a source.
+   * False means only Standard Transfer exists there. ArcLance always sends Standard transfers, so it never asks for Fast.
+   */
+  fastTransfer: boolean
 }
 
 const TOKEN_MESSENGER_V2 = '0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA'
@@ -123,7 +130,7 @@ function chain(
   native: { name: string; symbol: string },
   attestationTime: string,
   extra: { slowSource?: boolean } = {},
-): BridgeChain {
+): Omit<BridgeChain, 'sdkChain' | 'fastTransfer'> {
   return {
     key,
     name,
@@ -142,7 +149,7 @@ function chain(
   }
 }
 
-export const BRIDGE_CHAINS: BridgeChain[] = [
+const RAW_BRIDGE_CHAINS: Omit<BridgeChain, 'sdkChain' | 'fastTransfer'>[] = [
   {
     key: 'arc',
     name: ARC.name,
@@ -171,6 +178,28 @@ export const BRIDGE_CHAINS: BridgeChain[] = [
   chain('sonicTestnet', 'Sonic Testnet', 14601, 'https://rpc.testnet.soniclabs.com', 'https://testnet.sonicscan.org', '0x0BA304580ee7c9a980CF72e55f5Ed2E9fd30Bc51', 13, { name: 'Sonic', symbol: 'S' }, 'about 8 seconds'),
   chain('worldchainSepolia', 'World Chain Sepolia', 4801, 'https://worldchain-sepolia.g.alchemy.com/public', 'https://sepolia.worldscan.org', '0x66145f38cBAC35Ca6F1Dfb4914dF98F1614aeA88', 14, { name: 'Ether', symbol: 'ETH' }, '15 to 19 minutes'),
 ]
+
+// Source: developers.circle.com/cctp/concepts/supported-chains-and-domains ("Source (Fast transfer)" column) and the App Kit Blockchain enum.
+const BRIDGE_META: Record<string, { sdkChain: string; fastTransfer: boolean }> = {
+  arc: { sdkChain: 'Arc_Testnet', fastTransfer: false },
+  sepolia: { sdkChain: 'Ethereum_Sepolia', fastTransfer: true },
+  baseSepolia: { sdkChain: 'Base_Sepolia', fastTransfer: true },
+  arbitrumSepolia: { sdkChain: 'Arbitrum_Sepolia', fastTransfer: true },
+  opSepolia: { sdkChain: 'Optimism_Sepolia', fastTransfer: true },
+  polygonAmoy: { sdkChain: 'Polygon_Amoy_Testnet', fastTransfer: false },
+  avalancheFuji: { sdkChain: 'Avalanche_Fuji', fastTransfer: false },
+  unichainSepolia: { sdkChain: 'Unichain_Sepolia', fastTransfer: true },
+  monadTestnet: { sdkChain: 'Monad_Testnet', fastTransfer: false },
+  lineaSepolia: { sdkChain: 'Linea_Sepolia', fastTransfer: true },
+  sonicTestnet: { sdkChain: 'Sonic_Testnet', fastTransfer: false },
+  worldchainSepolia: { sdkChain: 'World_Chain_Sepolia', fastTransfer: true },
+}
+
+export const BRIDGE_CHAINS: BridgeChain[] = RAW_BRIDGE_CHAINS.map((c) => {
+  const meta = BRIDGE_META[c.key]
+  if (!meta) throw new Error(`Bridge network ${c.key} has no SDK chain entry`)
+  return { ...c, ...meta }
+})
 
 // ── EURC bridging: Circle "CCTP for non-USDC" (sandbox) ──────────────────────────────────────
 // Source: developers.circle.com/cctp/expanded-assets/references/contract-addresses (CrossChainTokenService, testnet)

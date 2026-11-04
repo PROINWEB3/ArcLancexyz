@@ -153,6 +153,20 @@ export async function getStandardFeeBps(srcDomain: number, dstDomain: number): P
   return standard.minimumFee
 }
 
+/**
+ * Smallest amount (token base units) that a burn can carry: the amount must be larger than the most the burn can cost,
+ * which is the protocol fee (feeBps, rounded up) plus any fixed forwarding fee. Both come from live Circle data.
+ * Returns null when the protocol fee alone is as large as the amount, so no amount works.
+ */
+export function minimumBridgeAmount(feeBps: number, forwardFee: bigint = 0n): bigint | null {
+  const rate = BigInt(Math.ceil(Math.max(feeBps, 0) * 100)) // 1/100 of a basis point, the same rounding as maxFeeFor
+  if (rate >= 1000000n) return null
+  // smallest a with a > ceil(a * rate / 1e6) + forwardFee  <=>  a * (1e6 - rate) >= (forwardFee + 1) * 1e6
+  const numerator = (forwardFee + 1n) * 1000000n
+  const denominator = 1000000n - rate
+  return (numerator + denominator - 1n) / denominator
+}
+
 export function maxFeeFor(amount: bigint, feeBps: number): bigint {
   if (feeBps <= 0) return 0n
   // round up, in 1/100 bps precision
