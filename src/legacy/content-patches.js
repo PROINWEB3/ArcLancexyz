@@ -63,7 +63,7 @@ export const INSERTS = [
 ];
 
 /** Features that were simulations (fake transaction hash and balance) and were removed: hide any leftover markup. */
-export const REMOVALS = ['#topbarBuyUsdcBtn', '#buyUsdcModal', '#crossChainPayModal', '[onclick*="openCrossChainPayModal"]'];
+export const REMOVALS = ['#crossChainPayModal', '[onclick*="openCrossChainPayModal"]'];
 
 /** Make a text input a date picker (the due date is stored as a real date, YYYY-MM-DD). */
 export const INPUT_TYPE_PATCHES = [

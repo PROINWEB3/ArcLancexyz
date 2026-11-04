@@ -1,3 +1,19 @@
+function readOnrampUrl(): string {
+  try {
+    const v = (import.meta.env as Record<string, string | undefined>)?.VITE_ONRAMP_URL
+    if (typeof v === 'string' && v.trim()) return v.trim()
+  } catch {
+    /* ignore */
+  }
+  try {
+    const v = typeof process !== 'undefined' ? process.env?.VITE_ONRAMP_URL : undefined
+    if (typeof v === 'string' && v.trim()) return v.trim()
+  } catch {
+    /* ignore */
+  }
+  return ''
+}
+
 /** Public site facts used by the footer, meta tags, pay links and docs. One place to change them. */
 export const SITE = {
   name: 'ArcLance',
@@ -13,7 +29,11 @@ export const SITE = {
   arcscan: 'https://testnet.arcscan.app',
   /** Date the network values, links and addresses shown in Docs were last checked. */
   docsVerified: '28 October 2026',
-} as const
+  /** Optional onramp URL (mainnet). When empty, testnet faucet guidance is shown. */
+  onrampUrl: readOnrampUrl(),
+}
+
+export const ONRAMP_URL: string = SITE.onrampUrl
 
 export const SITE_DESCRIPTION =
   'ArcLance is a payment page for freelancers who get paid in USDC or EURC on Arc. Send, receive, swap, bridge and invoice from your own wallet. Testnet build.'

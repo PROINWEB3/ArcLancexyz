@@ -714,6 +714,7 @@ const WalletManager = (() => {
       
       const rcvInput = document.getElementById('receive-addr-input');
       if (rcvInput) rcvInput.value = _addr;
+      if (typeof generateQR === 'function') generateQR();
 
       renderWalletOptions();
     }
@@ -723,6 +724,7 @@ const WalletManager = (() => {
     console.log(`[ArcLance Web3] Chain changed:`, chainId);
     if (_addr) {
       WalletState.loadFromChain(_addr);
+      if (typeof generateQR === 'function') generateQR();
       renderWalletOptions();
     }
   }
@@ -749,6 +751,8 @@ const WalletManager = (() => {
     _walletKey = null;
     _activeProvider = null;
 
+    const rcvInput = document.getElementById('receive-addr-input');
+    if (rcvInput) rcvInput.value = '';
     WalletState.loadFromChain(null);
     _updateBtn();
     

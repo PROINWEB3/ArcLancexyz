@@ -100,12 +100,12 @@ const UISync = (() => {
       }
     }
 
-    // Auto-fill receive wallet address if connected
+    // Auto-fill receive wallet address if connected and refresh QR
     const rcvInput = document.getElementById('receive-addr-input');
-    if (rcvInput && WalletState.getAddr() && !rcvInput.value) {
+    if (rcvInput && WalletState.getAddr()) {
       rcvInput.value = WalletState.getAddr();
-      if (typeof generateQR === 'function') generateQR();
     }
+    if (typeof generateQR === 'function') generateQR();
 
     refreshAssets();
     refreshSwapHints();

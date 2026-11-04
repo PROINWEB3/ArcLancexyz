@@ -274,21 +274,117 @@ test('local-currency previews: updated time when rates load, "unavailable" when 
   assert.ok(!ok.D.getElementById('local-currency-row').classList.contains('rate-hidden'), 'chips shown with a rate');
 });
 
-test('the simulated Buy USDC by card and Pay from Any Chain flows are gone', async () => {
+test('the simulated card onramp and Pay from Any Chain flows are gone; Buy USDC shows the honest testnet faucet panel or opens VITE_ONRAMP_URL', async () => {
   const t = await mount();
-  for (const sel of ['#topbarBuyUsdcBtn', '#buyUsdcModal', '#crossChainPayModal', '[onclick*="openCrossChainPayModal"]', '[onclick*="openBuyUsdcModal"]']) {
+  for (const sel of ['#crossChainPayModal', '[onclick*="openCrossChainPayModal"]', '#onrampPayAmount', '#onrampPaymentMethod', '#onrampDestAddr', '#onrampReceiveAmount', '#onrampSubmitBtn']) {
     assert.equal(t.D.querySelector(sel), null, sel + ' is removed');
   }
-  for (const fn of ['openBuyUsdcModal', 'executeCardOnramp', 'openCrossChainPayModal', 'executeGatewayPay']) {
+  for (const fn of ['executeCardOnramp', 'updateOnrampEstimate', 'openCrossChainPayModal', 'executeGatewayPay']) {
     assert.equal(typeof t.W[fn], 'undefined', fn + ' no longer exists');
   }
   const body = t.D.body.textContent;
-  assert.ok(!/Buy USDC by card|PAY WITH CARD VIA CIRCLE|Pay from Any Chain|Circle Onramp Kit/.test(body), 'no leftover text');
+  assert.ok(!/Buy USDC by card|PAY WITH CARD VIA CIRCLE|Pay from Any Chain|Circle Onramp Kit|1 USD = 1\.00 USDC|You Receive/.test(body), 'no fake card form or rate text');
   assert.ok(!/Clients can pay you from any chain/.test(body), 'the balance card no longer claims cross-chain payments');
   assert.match(t.text('#page-home'), /read-only: use the Bridge to move USDC to Arc Testnet/);
   const src = fs.readFileSync(path.join(ROOT, 'src/legacy/index.js'), 'utf8');
   assert.ok(!src.includes('99-cross-chain-onramp'));
   assert.ok(!fs.existsSync(path.join(ROOT, 'src/legacy/99-cross-chain-onramp.js')));
+
+  // Testnet behavior (VITE_ONRAMP_URL empty): opens "Test USDC is free" panel with https://faucet.circle.com button
+  const btn = t.D.getElementById('topbarBuyUsdcBtn');
+  const modal = t.D.getElementById('buyUsdcModal');
+  assert.ok(btn && modal, 'Buy USDC button and modal exist');
+  assert.ok(!modal.classList.contains('visible'), 'modal starts closed');
+  btn.click();
+  assert.ok(modal.classList.contains('visible'), 'clicking Buy USDC opens the testnet panel');
+  assert.match(t.text('#buyUsdcModal'), /Test USDC is free/);
+  const faucetLink = t.D.getElementById('buyUsdcFaucetBtn');
+  assert.ok(faucetLink && faucetLink.getAttribute('href') === 'https://faucet.circle.com', 'links to https://faucet.circle.com');
+  t.W.closeBuyUsdcModal();
+  assert.ok(!modal.classList.contains('visible'), 'closeBuyUsdcModal hides the panel');
+
+  // Mainnet behavior (VITE_ONRAMP_URL set): opens configured URL in a new tab with ?address=<wallet>
+  const bundleOnramp = await build({
+    entryPoints: [path.join(ROOT, 'src/legacy/index.js')], bundle: true, format: 'iife', write: false, logLevel: 'silent', plugins: [appKitStub],
+    define: { 'import.meta.env': JSON.stringify({ VITE_ESCROW_ADDRESS: ESCROW, VITE_ONRAMP_URL: 'https://onramp.example.com/buy' }) },
+  }).then((r) => r.outputFiles[0].text);
+  const m = await mount({ useBundle: bundleOnramp });
+  await m.connect();
+  let opened = null;
+  m.W.open = (url, target) => { opened = { url, target }; return null; };
+  m.D.getElementById('topbarBuyUsdcBtn').click();
+  assert.ok(opened, "window.open was called when VITE_ONRAMP_URL is set");
+  assert.equal(opened.target, '_blank');
+  assert.equal(opened.url, `https://onramp.example.com/buy?address=${ME}`);
+  assert.ok(!m.D.getElementById('buyUsdcModal').classList.contains('visible'), 'testnet modal stays closed when VITE_ONRAMP_URL is set');
+});
+
+test('receive QR: validates addresses, generates client-side QR, auto-fills connected wallet, re-renders on account/network change, and handles failure cleanly', async () => {
+  const t = await mount();
+  await t.W.navigate('payments');
+  const rcvTabBtn = t.D.querySelector('.pay-tab[onclick*="\'receive\'"]');
+  t.W.switchPayTab('receive', rcvTabBtn);
+  const input = t.D.getElementById('receive-addr-input');
+  const qrImg = t.D.getElementById('qr-image');
+  const statusMsg = t.D.getElementById('qr-status-msg');
+  const addrDisplay = t.D.getElementById('receive-addr-display');
+  const copyBtn = t.D.getElementById('qr-copy-btn');
+
+  // Disconnected: manual input empty
+  assert.equal(input.value, '');
+  assert.equal(qrImg.style.display, 'none');
+  assert.match(statusMsg.textContent, /Connect wallet or enter address/i);
+
+  // Invalid manual addresses: rejected with clear messages, no QR shown
+  input.value = '0x1234'; t.W.generateQR();
+  assert.equal(qrImg.style.display, 'none');
+  assert.match(statusMsg.textContent, /valid wallet address/i);
+  input.value = '0x0000000000000000000000000000000000000000'; t.W.generateQR();
+  assert.equal(qrImg.style.display, 'none');
+  assert.match(statusMsg.textContent, /zero address/i);
+  input.value = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293Bc'; t.W.generateQR();
+  assert.equal(qrImg.style.display, 'none');
+  assert.match(statusMsg.textContent, /checksum/i);
+
+  // Valid manual pasted address when disconnected: renders client-side SVG QR, never external service
+  input.value = OTHER; t.W.generateQR();
+  assert.equal(qrImg.style.display, 'block');
+  assert.ok(qrImg.src.startsWith('data:image/svg+xml;utf8,'), 'QR is generated client-side as data URL');
+  assert.ok(!qrImg.src.includes('qrserver.com'), 'never sends address to external QR service');
+  assert.equal(qrImg.getAttribute('data-qr-address'), OTHER);
+  assert.equal(addrDisplay.textContent, OTHER);
+  assert.equal(addrDisplay.style.display, 'block');
+  assert.notEqual(copyBtn.style.display, 'none');
+
+  // Connect wallet: auto-fills connected wallet address and renders QR
+  input.value = '';
+  await t.connect();
+  assert.equal(input.value, ME);
+  assert.equal(qrImg.getAttribute('data-qr-address'), ME);
+  assert.equal(addrDisplay.textContent, ME);
+  assert.equal(qrImg.style.display, 'block');
+
+  // Account change: updates input and re-renders QR for the new account
+  t.provider.emit('accountsChanged', [OTHER]);
+  await sleep(200);
+  assert.equal(input.value, OTHER);
+  assert.equal(qrImg.getAttribute('data-qr-address'), OTHER);
+  assert.equal(addrDisplay.textContent, OTHER);
+
+  // Network change: re-renders QR and records new chain
+  t.chain.id = '0x1'; t.provider.emit('chainChanged', '0x1');
+  await sleep(200);
+  assert.equal(qrImg.getAttribute('data-qr-chain'), '0x1');
+  assert.equal(qrImg.style.display, 'block');
+
+  // QR generation failure: shows clear message instead of a blank box, keeps address and copy button
+  t.W.__qrToString = (_text, _opts, cb) => cb(new Error('QR failed'));
+  t.W.generateQR();
+  assert.equal(qrImg.style.display, 'none');
+  assert.equal(statusMsg.style.display, 'block');
+  assert.match(statusMsg.textContent, /Could not generate QR code/i);
+  assert.equal(addrDisplay.textContent, OTHER);
+  delete t.W.__qrToString;
 });
 
 test('escrow contract not set: the notice says "Testnet: not deployed yet"', async () => {
