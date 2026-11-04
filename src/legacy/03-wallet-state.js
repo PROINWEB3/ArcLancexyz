@@ -2,6 +2,7 @@
 // Ported verbatim from the original single-file index.html.
 import { publish } from './publish.js';
 import { ARC, PEER_CHAINS } from '../config/chain-config';
+import { effectiveStatus } from '../lib/invoice-due';
 /* ══════════════════════════════════════
    WALLET STATE — با localStorage persistence
 ══════════════════════════════════════ */
@@ -315,10 +316,28 @@ const WalletState = (() => {
     _invoices.forEach(inv => {
       const amt = parseFloat(inv.amount) || 0;
       _invStats.total += amt;
-      if (inv.status === 'paid')    { _invStats.paid += amt; _invStats.paidCount++; }
-      else if (inv.status === 'pending') { _invStats.pending += amt; _invStats.pendingCount++; }
-      else if (inv.status === 'overdue') { _invStats.overdue += amt; _invStats.overdueCount++; }
+      const status = effectiveStatus(inv); // a pending invoice past its due date counts as overdue
+      if (status === 'paid')    { _invStats.paid += amt; _invStats.paidCount++; }
+      else if (status === 'pending') { _invStats.pending += amt; _invStats.pendingCount++; }
+      else if (status === 'overdue') { _invStats.overdue += amt; _invStats.overdueCount++; }
     });
+  }
+  // Add invoices read from a backup file. Existing invoices are never changed or removed.
+  function importInvoices(list) {
+    const taken = new Set(_invoices.map((i) => i.id));
+    let added = 0;
+    for (const inv of list) {
+      let id = inv.id;
+      while (taken.has(id)) id += 1;
+      taken.add(id);
+      _invoices.push({ ...inv, id });
+      added++;
+    }
+    _invoices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    _recalcInvoiceStats();
+    _save();
+    UISync.refreshInvoices();
+    return added;
   }
   function getInvoices() { return _invoices; }
   function getInvStats() { return _invStats; }
@@ -366,7 +385,7 @@ const WalletState = (() => {
 
 
 
-  return { save: _save, loadFromChain, loadPeerBalances, getPeerBalance, getStatus, isWrongNetwork, getUSDC, getEURC, getCIRBTC, setEURC, adjustUSDC, adjustEURC, getTokenBal, adjustToken, adjustTokenLocal, triggerChainSync, forceRefreshEURC, addTx, getTxHistory, addInvoice, getInvoices, getInvStats, addBridgeStat, getBridgeStats, getAddr, connected, getTotalUSD, getOnChainTxCount, markInvoicePaid };
+  return { save: _save, loadFromChain, loadPeerBalances, getPeerBalance, getStatus, isWrongNetwork, getUSDC, getEURC, getCIRBTC, setEURC, adjustUSDC, adjustEURC, getTokenBal, adjustToken, adjustTokenLocal, triggerChainSync, forceRefreshEURC, addTx, getTxHistory, addInvoice, importInvoices, getInvoices, getInvStats, addBridgeStat, getBridgeStats, getAddr, connected, getTotalUSD, getOnChainTxCount, markInvoicePaid };
 })();
 
 

@@ -46,8 +46,8 @@ function initFooter() {
   const a = (href, label, ext = true) => `<a href="${href}" ${ext ? 'target="_blank" rel="noopener"' : ''} style="color:var(--text2);text-decoration:none;padding:6px 2px">${label}</a>`;
   f.innerHTML = `<div><strong style="color:var(--text)">${SITE.name}</strong> · Testnet build</div>
     <nav style="display:flex;gap:14px;flex-wrap:wrap" aria-label="Footer">
-      <a href="#" onclick="navigate('docs');return false" style="color:var(--text2);text-decoration:none;padding:6px 2px">Docs</a>
-      ${a(SITE.arcscan, 'Arcscan')}${a(SITE.github, 'GitHub')}${a(SITE.x, `X (${esc(SITE.xHandle)})`)}
+      ${['docs:Docs', 'terms:Terms', 'privacy:Privacy', 'about:About', 'contact:Contact'].map((s) => { const [p, l] = s.split(':'); return `<a href="#" onclick="navigate('${p}');return false" style="color:var(--text2);text-decoration:none;padding:6px 2px">${l}</a>`; }).join('')}
+      ${a(SITE.arcscan, 'Arcscan')}${a(SITE.repo, 'GitHub')}${a(SITE.x, `X (${esc(SITE.xHandle)})`)}
     </nav>`;
   main.appendChild(f);
 }
@@ -59,9 +59,9 @@ function rateText() {
   if (!st) return '';
   const time = st.updatedAt ? `${pad(st.updatedAt.getHours())}:${pad(st.updatedAt.getMinutes())}` : '';
   if (st.updatedAt) return st.failed ? `Rate from ${time} (could not refresh)` : `Rate updated ${time}`;
-  if (st.failed) return 'Rate unavailable right now';
-  return 'Loading rate…';
+  return 'Rate unavailable right now';
 }
+const rateAvailable = () => { const st = typeof RateStatus !== 'undefined' ? RateStatus : null; return !!(st && st.updatedAt); };
 function renderRateNotes() {
   const anchors = ['local-currency-row', 'inv-local-preview', 'pl-local-preview', 'pay-local-preview'].map($);
   const modal = $('pl-modal-pkr'); if (modal && modal.parentElement && modal.parentElement.parentElement) anchors.push(modal.parentElement.parentElement);
@@ -73,13 +73,15 @@ function renderRateNotes() {
       el.insertAdjacentElement('afterend', note);
     }
     note.textContent = rateText();
+    // No rate: hide the currency chips (they would only show dashes) and let the note say it.
+    el.classList.toggle('rate-hidden', !rateAvailable());
   });
 }
 
 // ── Real contract link in the invoice escrow notice ──
 function fillEscrowLink() {
   const a = $('inv-escrow-link'); if (!a) return;
-  if (!ESCROW_ADDRESS) { a.textContent = 'not deployed'; a.removeAttribute('href'); return; }
+  if (!ESCROW_ADDRESS) { a.textContent = 'Testnet: not deployed yet'; a.removeAttribute('href'); return; }
   a.href = `${SITE.arcscan}/address/${ESCROW_ADDRESS}`;
   a.textContent = shortAddress(ESCROW_ADDRESS);
   a.title = ESCROW_ADDRESS;
@@ -107,7 +109,7 @@ function confirmSendSummary({ token, amount, recipient }) {
       <div class="wm-header"><div class="wm-title">Confirm payment</div></div>
       <div style="font-size:13px;margin-bottom:14px">${row('Token', esc(token))}${row('Amount', `${esc(String(amount))} ${esc(token)}`)}
         ${row('Recipient', `<span class="mono" style="font-family:'JetBrains Mono',monospace;font-size:12px">${esc(recipient)}</span>`)}
-        ${row('Network', esc(ARC.name))}${row('Network fee', 'Paid in USDC. Your wallet shows the exact amount.')}</div>
+        ${row('Network', `${esc(ARC.name)} (chain ID ${ARC.chainId})`)}${row('Network fee', 'Paid in USDC. Your wallet shows the exact amount.')}</div>
       <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6">Transactions cannot be reversed. Check the recipient before you confirm.</div>
       <div style="display:flex;gap:10px"><button type="button" class="tx-btn tx-btn-yellow" id="sendConfirmOk" style="flex:1">Confirm and sign</button><button type="button" class="btn btn-ghost" id="sendConfirmCancel" style="padding:12px 20px">Cancel</button></div></div>`;
     document.body.appendChild(o);

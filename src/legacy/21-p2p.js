@@ -184,7 +184,7 @@ const pageHead = (title) => `<div class="section-header"><div class="section-tit
 function notDeployed() {
   return `<div class="card animate" style="max-width:640px;margin:0 auto;width:100%">${pageHead('P2P')}
   <div style="text-align:center;padding:28px 10px"><div style="font-size:15px;font-weight:700;margin-bottom:8px">${NOT_DEPLOYED_MESSAGE}</div>
-  <div style="font-size:12px;color:var(--text2);line-height:1.7">Sell USDC for local money or buy it from others. The seller's USDC stays locked in a contract until the seller confirms the payment. The contract is not live yet, so there is nothing to show.</div></div></div>`;
+  <div style="font-size:12px;color:var(--text2);line-height:1.7">Sell USDC for local money or buy it from others. The seller's USDC is locked in a contract until the seller confirms, the order is cancelled or expires, or the arbiter rules on a dispute. The contract is not live yet, so there is nothing to show.</div></div></div>`;
 }
 
 function tabsHtml() {
@@ -230,7 +230,7 @@ function takeHtml() {
     <input class="form-input" data-p-takeamt placeholder="Amount in USDC (${fromUnits(a.minLimit, 6)} to ${fromUnits(a.maxLimit < a.remaining ? a.maxLimit : a.remaining, 6)})" inputmode="decimal" value="${esc(p.takeAmount)}">
     <div class="info-box" style="margin-top:10px"><div class="info-row"><span class="k">${youSell ? 'You receive' : 'You pay'}</span><span class="v yellow">${amt > 0n ? fiatText(fiat(amt, a.price)) : '—'} ${esc(a.currency)}</span></div>
     <div class="info-row"><span class="k">Payment window</span><span class="v">${a.paymentWindowMinutes} minutes</span></div></div>
-    ${youSell ? '<div style="font-size:11px;color:var(--text2);margin-top:8px">Your USDC is locked in the contract until you confirm you were paid.</div>' : ''}${demoNote()}
+    ${youSell ? '<div style="font-size:11px;color:var(--text2);margin-top:8px">Your USDC is locked in the contract until you confirm, cancel or the order expires, or the arbiter rules on a dispute.</div>' : ''}${demoNote()}
     <div style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn btn-primary" data-p-confirmtake="1" ${p.busy ? 'disabled' : ''}>${p.busy ? '<div class="spinner"></div> Working…' : 'Create order'}</button><button type="button" class="btn btn-ghost" data-p-canceltake="1">Cancel</button></div></div>`;
 }
 
@@ -292,7 +292,7 @@ function orderHtml() {
       <div class="info-row"><span class="k">Payment reference</span><span class="v mono">ARCLANCE-${o.id}</span></div></div>
     ${isBuyer && s <= 1 ? `<div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px"><div class="form-label">Payment instructions</div><div style="font-size:13px;white-space:pre-wrap">${esc(a.paymentDetails)}</div><div style="font-size:11px;color:var(--text2);margin-top:6px">Methods: ${esc(methodsText(a.paymentMethods, a.currency).join(', '))}. Put the reference in your payment note.</div>${demoNote()}</div>` : ''}
     ${timeline}${o.paymentReference ? `<div style="font-size:11px;color:var(--text2);margin-top:8px">Buyer reference: ${esc(o.paymentReference)}</div>` : ''}
-    ${actions ? `<div style="margin-top:14px">${actions}</div>` : ''}${msgHtml()}
+    ${actions ? `<div style="margin-top:14px">${actions}</div>` : ''}${actions.includes('data-p-dispute') ? `<div style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5">Disputes are decided by a single arbiter address. This is a test deployment.</div>` : ''}${msgHtml()}
     <button type="button" class="btn btn-ghost btn-sm" data-p-tab="orders" style="margin-top:14px">Back to orders</button>`;
 }
 
@@ -323,7 +323,7 @@ function bind() {
     else if (d.pFcountry) { p.form.country = d.pFcountry; p.form.methods = 1; render(); }
     else if (d.pFwin) { p.form.window = d.pFwin; render(); }
     else if (d.pPublish) { if (!WalletState.connected()) WalletManager.openModal(); else createAdFlow(); }
-    else if (d.pPaid) { const ref = ($('p2p-ref')?.value || '').trim() || `ARCLANCE-${p.order.id}`; orderAction('markPaid', [BigInt(p.order.id), ref], 'Marked as paid. The seller has been notified onchain.'); }
+    else if (d.pPaid) { const ref = ($('p2p-ref')?.value || '').trim() || `ARCLANCE-${p.order.id}`; orderAction('markPaid', [BigInt(p.order.id), ref], 'Payment marked on-chain. The seller must open the page to confirm.'); }
     else if (d.pConfirm) orderAction('confirmPayment', [BigInt(p.order.id)], 'Payment confirmed. USDC released to the buyer.');
     else if (d.pCancel) orderAction('cancelOrder', [BigInt(p.order.id)], 'Order cancelled.');
     else if (d.pDispute) { const reason = window.prompt('Why are you opening a dispute?'); if (reason && reason.trim()) orderAction('openDispute', [BigInt(p.order.id), reason.trim()], 'Dispute opened.'); }

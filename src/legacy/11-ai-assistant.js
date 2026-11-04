@@ -24,7 +24,7 @@ arc: `**Arc Network — Official Facts:**
 
 usdc: `**USDC — USD Coin:**
 - Issued by **Circle** — US regulated financial company
-- Always = **$1.00 USD** — fully pegged stablecoin
+- Designed to track **$1 USD** (a stablecoin)
 - Backed 1:1 by USD in US regulated bank accounts
 - Reserves are attested by independent accountants
 - On Arc: USDC is the **native gas token** with 18 decimals
@@ -61,13 +61,13 @@ arclance: `**ArcLance — Get Paid Globally in USDC:**
 - Features: Send, Receive, Swap, Bridge, Invoices, Pay Link, AI Assistant
 - Self-custodial — **only you control your funds**
 - No bank account needed
-- Alternative to PayPal, Payoneer, Wise for developing countries`,
+- An option for freelancers facing high fees, slow KYC, or limited access to PayPal/Payoneer`,
 
 bridge: `**Bridge Assets via Circle CCTP:**
 - Bridge USDC between any two of these ${BRIDGE_CHAINS.length} testnets: **${BRIDGE_CHAINS.map((c) => c.name).join(', ')}**
 - Uses **Circle CCTP** (Cross-Chain Transfer Protocol)
 - Bridge fee: shown on the Bridge page before you confirm
-- Time: **~15 minutes**
+- Time: varies by route; follow the explorer links for the status
 - CCTP Contract: **0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA**
 - Bridge EURC between any two of: **${BRIDGE_CHAINS.filter((c) => c.eurc).map((c) => c.name).join(', ')}**
 - Route shown in Bridge tab`,
@@ -91,7 +91,7 @@ wallet: `**Wallet Setup for Arc Testnet:**
 
 fees: `**Fee Comparison:**
 - **ArcLance: no percentage cut**, only the flat network fee in USDC
-- PayPal, Payoneer and marketplaces: a percentage plus fixed fees
+- PayPal, Payoneer and marketplaces usually charge a percentage plus fixed fees (approximate, varies by region and plan)
 - Wise: a percentage fee
 - SWIFT bank transfer: a flat fee per transfer, often $25 or more
 
@@ -99,7 +99,7 @@ Check each provider for its current fees. ArcLance takes no cut:
 - ArcLance takes **no cut**, only the network fee `,
 
 pakistan: `**Pakistan Freelancer Guide:**
-- PayPal is restricted in Pakistan — ArcLance solves this!
+- PayPal access can be limited in Pakistan (varies by account); a wallet works from any country where you can hold one
 - Receive USDC from any client globally
 - **Withdraw to PKR:**
   1. Receive USDC in ArcLance wallet
@@ -111,8 +111,8 @@ pakistan: `**Pakistan Freelancer Guide:**
 - Works for Upwork, Fiverr, and direct clients`,
 
 india: `**India Freelancer Complete Guide:**
-- PayPal works but has high fees — ArcLance is better!
-- Receive USDC from US, UK, EU clients instantly
+- PayPal can work but may have high fees (approximate, varies by region and plan)
+- Receive USDC from clients in any country; it arrives once the transaction is confirmed
 
 **Withdraw USDC to INR:**
 Step 1: Receive USDC in ArcLance wallet
@@ -126,13 +126,13 @@ Step 4: Withdraw INR to bank account or UPI
 - Binance P2P — best rates
 
 **Rates:** move daily, check P2P for current prices
-**Fees saved:** PayPal charges 4.4% → ArcLance charges no percentage, only the flat network fee
+**Fees:** PayPal fees are a percentage (approximate, varies by region and plan); ArcLance takes no percentage on testnet, only the network fee
 **Settlement:** seconds, no holding period
 **Works with:** Upwork, Fiverr, direct clients
 **Supported banks:** All Indian banks, UPI, PhonePe, GPay`,
 
 bangladesh: `**Bangladesh Freelancer Complete Guide:**
-- Payoneer works but slow — ArcLance is instant!
+- Payoneer can work, but its KYC can be slow (varies)
 - Useful for freelancers in Bangladesh
 
 **Withdraw USDC to BDT:**
@@ -147,13 +147,13 @@ Step 4: Receive BDT via bKash, Nagad, or bank
 - Local crypto traders — fastest
 
 Rates change daily. Check Binance P2P or the live rate shown in the app.
-**Fees saved:** Payoneer charges 2% → ArcLance charges no percentage, only the flat network fee
+**Fees:** Payoneer fees are a percentage (approximate, varies by region and plan); ArcLance takes no percentage on testnet, only the network fee
 **Settlement:** seconds
 **Works with:** Upwork, Fiverr, 99designs, direct clients
 **Supported:** bKash, Nagad, Dutch Bangla, all banks`,
 
 nigeria: `**Nigeria Freelancer Complete Guide:**
-- PayPal is heavily restricted in Nigeria — ArcLance is the solution!
+- PayPal access can be limited in Nigeria (varies by account)
 - Millions of Nigerian freelancers face payment problems — not anymore!
 
 **Withdraw USDC to NGN:**
@@ -169,7 +169,7 @@ Step 4: Receive NGN to GTBank, Access, Zenith, or any bank
 - Bybit P2P — alternative option
 
 Rates change daily. Check Binance P2P or the live rate shown in the app.
-**Fees saved:** PayPal not available → ArcLance works perfectly!
+**Fees:** where PayPal is limited, a wallet payment is an option; the network fee applies
 **Settlement:** seconds
 **Languages supported:** English, Yoruba, Igbo, Hausa
 **Works with:** Upwork, Fiverr, Toptal, direct clients
@@ -199,7 +199,7 @@ faucet: `**Get Free Test USDC:**
 - Select: **Arc Testnet** as network
 - Select: **USDC** as token
 - Enter your wallet address
-- Click Send — USDC arrives instantly!
+- Click Send — USDC arrives once the transaction is confirmed
 - Also get free EURC from same faucet
 - Use for testing Send, Swap, Bridge, Invoice features`,
 
@@ -211,7 +211,7 @@ invoice: `**Create & Send Invoices:**
 5. Click **CREATE INVOICE** — sign in wallet
 6. **Download PDF** or copy payment link
 7. Share via **WhatsApp** or email
-8. Client clicks PAY — USDC sent instantly!`,
+8. Client clicks PAY — USDC is sent once the transaction is confirmed`,
 
 failed: `**Transaction Failed? Fix It:**
 1. Check USDC balance — need a little USDC for gas

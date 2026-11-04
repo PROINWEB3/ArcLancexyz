@@ -4,6 +4,7 @@ import { publish } from './publish.js';
 import { uiIcon, stripPictographs } from '../assets/ui-icons';
 import { buildPayLink } from './lib-paylink.js';
 import { ARC } from '../config/chain-config';
+import { formatDue } from '../lib/invoice-due';
 /* ══════════════════════════════════════
    TOAST
 ══════════════════════════════════════ */
@@ -101,11 +102,12 @@ function updateInvLocalCurrency() {
 ══════════════════════════════════════ */
 function updatePayLinkPreview() {
   const typed = (document.getElementById('inv-username')?.value?.trim() || '').replace(/\s+/g,'-').toLowerCase();
-  // A username only resolves in the browser that saved it, so prefer the wallet address when there is no username
-  const user = typed || (typeof WalletState !== 'undefined' && WalletState.getAddr()) || 'username';
+  // The link pays the wallet address (it opens on any device). The username is only a display label (?u=).
+  const entered = document.getElementById('inv-addr')?.value?.trim() || '';
+  const address = /^0x[0-9a-fA-F]{40}$/.test(entered) ? entered : (typeof WalletState !== 'undefined' && WalletState.getAddr()) || '';
   const inv = document.getElementById('inv-number')?.value?.trim() || 'INV-001';
   const amt = document.getElementById('inv-amount')?.value?.trim() || '';
-  const link = buildPayLink(user, amt, inv);
+  const link = buildPayLink(address, amt, inv, typed);
   const el = document.getElementById('inv-link-text');
   if(el) el.textContent = link;
 }
@@ -127,7 +129,7 @@ function shareViaWhatsApp() {
   
   let msgText = `Hi ${client},\n\nThis is ${yourName}. Please find the invoice details below:\n\nInvoice #: ${invNumber}\nService: ${desc}\nAmount: ${amount} USDC`;
   if (due) {
-    msgText += `\nDue Date: ${due}`;
+    msgText += `\nDue Date: ${formatDue(due)}`;
   }
   msgText += `\n\nPay here: ${link}\n\nThank you!\nPowered by ArcLance — Borderless Payments on Arc Network`;
   
@@ -167,10 +169,10 @@ function downloadInvoicePDF() {
   const total    = +(subtotal + taxAmt).toFixed(2);
 
   // Local currency conversions
-  const pkrVal = formatLocal(total, LocalRates.PKR);
-  const inrVal = formatLocal(total, LocalRates.INR);
-  const bdtVal = formatLocal(total, LocalRates.BDT);
-  const ngnVal = formatLocal(total, LocalRates.NGN);
+  const pkrVal = LocalRates.PKR ? formatLocal(total, LocalRates.PKR) : 'Rate unavailable right now';
+  const inrVal = LocalRates.INR ? formatLocal(total, LocalRates.INR) : 'Rate unavailable right now';
+  const bdtVal = LocalRates.BDT ? formatLocal(total, LocalRates.BDT) : 'Rate unavailable right now';
+  const ngnVal = LocalRates.NGN ? formatLocal(total, LocalRates.NGN) : 'Rate unavailable right now';
 
   // Build line items HTML
   const itemRows = hasMultipleItems
@@ -288,7 +290,7 @@ function downloadInvoicePDF() {
       <div class="inv-badge">INVOICE</div>
       <div class="inv-number">${number}</div>
       <div class="inv-date">Issue Date: ${today}</div>
-      <div class="inv-due">Due: ${due}</div>
+      <div class="inv-due">Due: ${formatDue(due)}</div>
       <div style="margin-top:10px"><span class="status-pending">PAYMENT PENDING</span></div>
     </div>
   </div>
@@ -330,8 +332,8 @@ function downloadInvoicePDF() {
   <div class="totals-wrap">
     <div class="totals-box">
       <div class="totals-row"><span class="totals-k">Subtotal</span><span class="totals-v">${subtotal.toFixed(2)} USDC</span></div>
-      <div class="totals-row"><span class="totals-k">Tax (${taxRate}%)</span><span class="totals-v">${taxAmt.toFixed(2)} USDC</span></div>
-      <div class="totals-row"><span class="totals-k">Platform Fee</span><span class="totals-v" style="color:#16a34a">0.00 USDC</span></div>
+      <div class="totals-row"><span class="totals-k">Tax (not applied)</span><span class="totals-v">${taxAmt.toFixed(2)} USDC</span></div>
+      <div class="totals-row"><span class="totals-k">ArcLance platform fee</span><span class="totals-v" style="color:#16a34a">None on testnet</span></div>
       <div class="totals-total">
         <span class="totals-k">TOTAL DUE</span>
         <span class="totals-v">${total.toFixed(2)} USDC</span>
@@ -355,9 +357,9 @@ function downloadInvoicePDF() {
     <div class="payment-meta">
       <span class="pay-chip">USDC Token</span>
       <span class="pay-chip">${ARC.name} · Chain ID ${ARC.chainId}</span>
-      <span class="pay-chip">~2 sec Settlement</span>
-      <span class="pay-chip">~0.12 USDC Gas Fee</span>
-      <span class="pay-chip">0% Platform Fee</span>
+      <span class="pay-chip">Settles when confirmed on Arc Testnet</span>
+      <span class="pay-chip">Network fee applies</span>
+      <span class="pay-chip">No platform fee on testnet</span>
     </div>
   </div>
 

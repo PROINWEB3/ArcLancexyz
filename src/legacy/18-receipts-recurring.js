@@ -116,7 +116,7 @@ window.saveScheduledPayments = function(payments) {
 
 window.scheduleRecurringPayment = function() {
   const recipient = document.getElementById('rec-pay-recipient')?.value?.trim();
-  const label = document.getElementById('rec-pay-label')?.value?.trim() || 'Recurring Payment';
+  const label = document.getElementById('rec-pay-label')?.value?.trim() || 'Payment reminder';
   const amtStr = document.getElementById('rec-pay-amount')?.value?.trim();
   const amount = parseFloat(amtStr) || 0;
   const token = document.getElementById('rec-pay-token')?.value || 'USDC';
@@ -150,7 +150,7 @@ window.scheduleRecurringPayment = function() {
   
   payments.push(newPayment);
   window.saveScheduledPayments(payments);
-  showToast(`Scheduled ${frequency} payment of ${amount} ${token} successfully!`);
+  showToast(`Reminder saved: ${frequency} ${amount} ${token}. ArcLance will remind you; it does not send payments automatically.`);
   
   // Clear fields
   if (document.getElementById('rec-pay-recipient')) document.getElementById('rec-pay-recipient').value = '';
@@ -164,7 +164,7 @@ window.cancelRecurringPayment = function(id) {
   let payments = window.getScheduledPayments();
   payments = payments.filter(p => p.id !== id);
   window.saveScheduledPayments(payments);
-  showToast('Recurring payment cancelled');
+  showToast('Reminder deleted');
   window.renderScheduledPayments();
 };
 
@@ -174,7 +174,7 @@ window.renderScheduledPayments = function() {
   
   const payments = window.getScheduledPayments();
   if (!payments.length) {
-    container.innerHTML = '<div class="history-empty">No recurring payments scheduled yet</div>';
+    container.innerHTML = '<div class="history-empty">No reminders saved yet</div>';
     return;
   }
   
@@ -193,7 +193,7 @@ window.renderScheduledPayments = function() {
           <span style="font-weight:700; font-size:14px; color:var(--text);">${p.amount} ${p.token}</span>
           <div style="display:flex; gap:8px; align-items:center;">
             <span style="font-size:11px; color:var(--text2)">Next: ${nextDate}</span>
-            <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px; border-color:rgba(239,68,68,0.3); color:var(--red);" onclick="cancelRecurringPayment('${p.id}')">Cancel</button>
+            <button class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:11px; border-color:rgba(239,68,68,0.3); color:var(--red);" onclick="cancelRecurringPayment('${p.id}')">Delete</button>
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@ window.checkDueRecurringPayments = function() {
   
   payments.forEach(p => {
     if (p.nextDue && now >= p.nextDue) {
-      showToast(`Reminder: Recurring payment "${p.label}" of ${p.amount} ${p.token} to ${p.recipient.slice(0,6)}... is due!`);
+      showToast(`Reminder: "${p.label}" (${p.amount} ${p.token} to ${p.recipient.slice(0,6)}...) is due. Send it yourself: ArcLance does not pay automatically.`);
       const intervalMs = p.frequency === 'weekly' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
       p.lastPaid = now;
       p.nextDue = now + intervalMs;

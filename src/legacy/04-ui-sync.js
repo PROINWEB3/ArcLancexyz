@@ -4,6 +4,7 @@ import { publish } from './publish.js';
 import { uiIcon, stripPictographs } from '../assets/ui-icons';
 import { tokenIcon } from '../assets/icons';
 import { ARC, arcTxUrl, arcAltTxUrl } from '../config/chain-config';
+import { effectiveStatus, formatDue } from '../lib/invoice-due';
 /* ══════════════════════════════════════
    UI SYNC
 ══════════════════════════════════════ */
@@ -54,6 +55,8 @@ const UISync = (() => {
     setEl('home-arc-tx-count', onChainTxs > 0 ? onChainTxs : WalletState.getTxHistory().length);
     setEl('portfolio-amount', approxMark + fmtUSD(totalUSD));
     renderApproxNotes();
+    // the username pay link uses the connected wallet address, so refresh it when the wallet changes
+    if (typeof window.updateUsernameUI === 'function') window.updateUsernameUI();
 
     // Update Multi-Chain Unified Balance (Circle Gateway)
     const arcUSDC = WalletState.getTokenBal('USDC', 'ARC');
@@ -317,27 +320,28 @@ const UISync = (() => {
     }
     list.innerHTML = invs.map((inv, idx) => {
       let badgeHtml = '';
-      if (inv.status === 'paid') {
+      const status = effectiveStatus(inv); // pending becomes overdue once the due date has passed
+      if (status === 'paid') {
         badgeHtml = '<span class="badge badge-green">Paid</span>';
-      } else if (inv.status === 'overdue') {
+      } else if (status === 'overdue') {
         badgeHtml = '<span class="badge badge-red">Overdue</span>';
       } else {
-        badgeHtml = `<span class="badge badge-yellow">${inv.status}</span>`;
+        badgeHtml = `<span class="badge badge-yellow">${status}</span>`;
       }
       if (inv.isEscrow) {
         badgeHtml += ` <span class="badge badge-purple" style="font-size:10px">Escrow (${inv.escrowStatus || 'Active'})</span>`;
       }
       
-      const canPay = inv.status !== 'paid' && inv.walletAddr && WalletState.connected();
-      const isPending = inv.status === 'pending';
-      const isOverdue = inv.status === 'overdue';
+      const canPay = status !== 'paid' && inv.walletAddr && WalletState.connected();
+      const isPending = status === 'pending';
+      const isOverdue = status === 'overdue';
       const showEscrowRelease = inv.isEscrow && (inv.status === 'paid' || inv.escrowStatus === 'Locked in Escrow');
       
       return `<div class="tx-row" style="flex-wrap:wrap;gap:8px">
         <div class="tx-icon" style="background:rgba(245,197,24,0.1);color:var(--yellow)">${uiIcon('file',18)}</div>
         <div style="flex:1;min-width:120px">
           <div class="tx-name">${inv.number} — ${inv.client}</div>
-          <div class="tx-time">${inv.yourName ? 'From: '+inv.yourName+' · ' : ''}${new Date(inv.createdAt).toLocaleDateString()}</div>
+          <div class="tx-time">${inv.yourName ? 'From: '+inv.yourName+' · ' : ''}${new Date(inv.createdAt).toLocaleDateString()}${inv.due ? ' · Due: ' + formatDue(inv.due) : ''}</div>
           ${inv.project ? `<div style="font-size:11px;color:var(--text2)">Project: ${inv.project}</div>` : ''}
           ${inv.isEscrow ? `<div style="font-size:10px;color:#c4b5fd;margin-top:2px">Escrow tag · saved in this browser, funds not locked</div>` : ''}
         </div>
@@ -346,7 +350,7 @@ const UISync = (() => {
         <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
           ${canPay ? `<button onclick="TxManager.payInvoice(${idx})" style="padding:6px 12px;background:linear-gradient(135deg,var(--yellow),#d4a017);color:#000;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">PAY</button>` : ''}
           ${showEscrowRelease ? `<button onclick="releaseEscrowInvoice(${idx})" style="padding:6px 12px;background:rgba(108,63,196,0.2);color:#c4b5fd;border:1px solid rgba(108,63,196,0.4);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Release</button><button onclick="disputeEscrowInvoice(${idx})" style="padding:6px 12px;background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Dispute</button>` : ''}
-          ${isPending && !inv.isEscrow ? `<button onclick="WalletState.markInvoicePaid(${idx})" style="padding:6px 12px;background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">✓ Mark Paid</button>` : ''}
+          ${(isPending || isOverdue) && !inv.isEscrow ? `<button onclick="WalletState.markInvoicePaid(${idx})" style="padding:6px 12px;background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">✓ Mark Paid</button>` : ''}
           ${isPending || isOverdue ? `<button onclick="shareInvoiceReminder('${inv.client.replace(/'/g, "\\'")}', '${inv.number.replace(/'/g, "\\'")}', '${inv.amount}', '${inv.walletAddr || ''}')" style="padding:6px 12px;background:rgba(0,230,118,0.08);color:var(--green);border:1px solid rgba(0,230,118,0.2);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif">Remind</button>` : ''}
         </div>
       </div>`;

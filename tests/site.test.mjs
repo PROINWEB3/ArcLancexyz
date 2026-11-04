@@ -27,6 +27,11 @@ const bundle = await build({
   define: { 'import.meta.env': JSON.stringify({ VITE_ESCROW_ADDRESS: ESCROW }) },
 }).then((r) => r.outputFiles[0].text);
 
+const bundleNoEscrow = await build({
+  entryPoints: [path.join(ROOT, 'src/legacy/index.js')], bundle: true, format: 'iife', write: false, logLevel: 'silent', plugins: [appKitStub],
+  define: { 'import.meta.env': '{}' },
+}).then((r) => r.outputFiles[0].text);
+
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'paylink-'));
 const paylinkJs = path.join(tmp, 'paylink.mjs');
 await build({ entryPoints: [path.join(ROOT, 'src/legacy/lib-paylink.js')], bundle: true, format: 'esm', outfile: paylinkJs, logLevel: 'silent' });
@@ -55,7 +60,6 @@ test('hero, cards and docs use the agreed wording', () => {
   assert.ok(rawHtml.includes("A payment page for freelancers who can't use PayPal or Payoneer. Works in any country where you can hold a wallet."));
   assert.ok(rawHtml.includes('ArcLance never holds your funds. Note that USDC itself is issued by Circle and can be blacklisted by the issuer.'));
   assert.ok(rawHtml.includes('reserves are attested by independent accountants') || rawHtml.includes('Reserves are attested by independent accountants'));
-  assert.ok(rawHtml.includes('Your client needs a wallet with USDC, or can buy USDC by card through the Buy USDC option'));
   const fast = rawHtml.slice(rawHtml.indexOf('Fast Settlement'), rawHtml.indexOf('Fast Settlement') + 400);
   assert.ok(/EVM Layer 1/.test(fast) && !/\bL2\b/.test(fast), 'Fast Settlement card says Layer 1, not L2');
   assert.ok(rawHtml.includes('Flat network fee, no percentage cut.'));
@@ -94,11 +98,15 @@ test('hard-coded rates are gone from the app code', () => {
 test('one pay link format: https://arclance.xyz/pay/<username-or-address>/<amount>/<label>', () => {
   assert.equal(buildPayLink(ME, '25', 'Logo design'), `https://arclance.xyz/pay/${ME}/25/Logo-design`);
   assert.equal(buildPayLink('@ali-hassan', 10, 'INV-001'), 'https://arclance.xyz/pay/ali-hassan/10/INV-001');
+  assert.equal(buildPayLink(ME, 10, 'INV-001', '@Ali-Hassan'), `https://arclance.xyz/pay/${ME}/10/INV-001?u=ali-hassan`, 'the username is only a display label');
+  assert.equal(buildPayLink(ME, 10, 'x', 'a b!'), `https://arclance.xyz/pay/${ME}/10/x`, 'an invalid label is dropped');
   assert.equal(buildPayLink('ali'), 'https://arclance.xyz/pay/ali');
   const p = parsePayPath(`/pay/${ME}/25/Logo-design`, '');
-  assert.deepEqual(p, { target: ME, amount: 25, label: 'Logo design' });
+  assert.deepEqual(p, { target: ME, amount: 25, label: 'Logo design', name: '' });
+  assert.equal(parsePayPath(`/pay/${ME}/25/Logo-design`, '', '?u=Ali-Hassan').name, 'ali-hassan');
+  assert.equal(parsePayPath(`/pay/${ME}/25/x`, '', '?u=<script>').name, '', 'a bad label is ignored');
   assert.equal(parsePayPath('/', ''), null);
-  assert.deepEqual(parsePayPath('/', `#/pay/${ME}/5/x`), { target: ME, amount: 5, label: 'x' }, 'older #/pay links still open');
+  assert.deepEqual(parsePayPath('/', `#/pay/${ME}/5/x`), { target: ME, amount: 5, label: 'x', name: '' }, 'older #/pay links still open');
   for (const f of ['13-toast-invoice', '14-paylink-stats', '16-rates-username', '18-receipts-recurring']) {
     const src = fs.readFileSync(path.join(ROOT, 'src/legacy', f + '.js'), 'utf8');
     assert.ok(!/arclance\.io|arclance\/pay|location\.origin \+ '\/pay/.test(src), `${f} uses an old pay link format`);
@@ -106,7 +114,7 @@ test('one pay link format: https://arclance.xyz/pay/<username-or-address>/<amoun
 });
 
 // ── page harness ──
-async function mount({ url = 'https://localhost/', walletChain = '0x4cef52', rates = 'ok', prices = 'fail', balances = { USDC: 5000n * 10n ** 6n } } = {}) {
+async function mount({ url = 'https://localhost/', walletChain = '0x4cef52', rates = 'ok', prices = 'fail', balances = { USDC: 5000n * 10n ** 6n }, useBundle, storage = {} } = {}) {
   const chain = { id: walletChain, sent: [], methods: [], balances, switchAttempts: 0, receiptStatus: '0x1', rejectNext: false };
   const errors = []; const vc = new VirtualConsole(); vc.on('jsdomError', (e) => errors.push(e.message));
   const hex = (n) => '0x' + BigInt(n).toString(16).padStart(64, '0');
@@ -128,6 +136,7 @@ async function mount({ url = 'https://localhost/', walletChain = '0x4cef52', rat
   const dom = new JSDOM(HTML, {
     url, runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
+      for (const [k, v] of Object.entries(storage)) w.localStorage.setItem(k, v);
       w.fetch = async (u, o = {}) => {
         const s = String(u);
         if (s.includes('open.er-api.com')) {
@@ -159,11 +168,12 @@ async function mount({ url = 'https://localhost/', walletChain = '0x4cef52', rat
         chain.id = '0x4cef52'; return null;
       }
       if (method === 'wallet_addEthereumChain') { chain.id = '0x4cef52'; chain.noArc = false; return null; }
+      if (method === 'personal_sign') return '0x' + 'ab'.repeat(65);
       if (method === 'eth_sendTransaction') { if (chain.rejectNext) { chain.rejectNext = false; throw Object.assign(new Error('User rejected the request.'), { code: 4001 }); } chain.sent.push(params[0]); return '0x' + String(chain.sent.length).padStart(64, 'd'); }
       return rpc(method, params);
     },
   };
-  W.eval(bundle);
+  W.eval(useBundle || bundle);
   W.document.dispatchEvent(new W.Event('DOMContentLoaded'));
   W.dispatchEvent(new W.CustomEvent('eip6963:announceProvider', { detail: Object.freeze({ info: { uuid: '1', name: 'MockWallet', icon: '', rdns: 'mock.wallet' }, provider }) }));
   await sleep(150);
@@ -189,7 +199,8 @@ test('footer links and page titles', async () => {
   assert.ok(f, 'footer exists');
   assert.match(f.textContent, /ArcLance/); assert.match(f.textContent, /Testnet build/);
   const hrefs = [...f.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-  assert.ok(hrefs.includes('https://github.com/PROINWEB3') && hrefs.includes('https://testnet.arcscan.app'));
+  assert.ok(hrefs.includes('https://github.com/PROINWEB3/ArcLancexyz') && hrefs.includes('https://testnet.arcscan.app'));
+  for (const l of ['Docs', 'Terms', 'Privacy', 'About', 'Contact']) assert.ok([...f.querySelectorAll('a')].some((x) => x.textContent.trim() === l), 'footer link ' + l);
   assert.ok([...f.querySelectorAll('a')].some((a) => /@PROinWeb3/.test(a.textContent) && a.href.startsWith('https://x.com/PROinWeb3')));
   assert.ok([...f.querySelectorAll('a')].some((a) => a.textContent.trim() === 'Docs'));
   for (const [page, title] of [['swap', 'Swap | ArcLance'], ['bridge', 'Bridge | ArcLance'], ['escrow', 'Escrow | ArcLance'], ['docs', 'Docs | ArcLance'], ['home', 'Home | ArcLance']]) {
@@ -258,6 +269,33 @@ test('local-currency previews: updated time when rates load, "unavailable" when 
   assert.ok(await bad.until(() => /Rate unavailable right now/.test(bad.text('#local-currency-row + .rate-note')), 25000), bad.text('#local-currency-row + .rate-note'));
   assert.equal(bad.text('#local-pkr'), '—');
   assert.match(bad.text('#home-total-earned-local'), /unavailable/i);
+  // with no rate the currency chips are hidden (no dashes) and the note says so; with a rate they show
+  assert.ok(bad.D.getElementById('local-currency-row').classList.contains('rate-hidden'), 'chips hidden without a rate');
+  assert.ok(!ok.D.getElementById('local-currency-row').classList.contains('rate-hidden'), 'chips shown with a rate');
+});
+
+test('the simulated Buy USDC by card and Pay from Any Chain flows are gone', async () => {
+  const t = await mount();
+  for (const sel of ['#topbarBuyUsdcBtn', '#buyUsdcModal', '#crossChainPayModal', '[onclick*="openCrossChainPayModal"]', '[onclick*="openBuyUsdcModal"]']) {
+    assert.equal(t.D.querySelector(sel), null, sel + ' is removed');
+  }
+  for (const fn of ['openBuyUsdcModal', 'executeCardOnramp', 'openCrossChainPayModal', 'executeGatewayPay']) {
+    assert.equal(typeof t.W[fn], 'undefined', fn + ' no longer exists');
+  }
+  const body = t.D.body.textContent;
+  assert.ok(!/Buy USDC by card|PAY WITH CARD VIA CIRCLE|Pay from Any Chain|Circle Onramp Kit/.test(body), 'no leftover text');
+  assert.ok(!/Clients can pay you from any chain/.test(body), 'the balance card no longer claims cross-chain payments');
+  assert.match(t.text('#page-home'), /read-only: use the Bridge to move USDC to Arc Testnet/);
+  const src = fs.readFileSync(path.join(ROOT, 'src/legacy/index.js'), 'utf8');
+  assert.ok(!src.includes('99-cross-chain-onramp'));
+  assert.ok(!fs.existsSync(path.join(ROOT, 'src/legacy/99-cross-chain-onramp.js')));
+});
+
+test('escrow contract not set: the notice says "Testnet: not deployed yet"', async () => {
+  const t = await mount({ useBundle: bundleNoEscrow });
+  const a = t.D.getElementById('inv-escrow-link');
+  assert.equal(a.textContent.trim(), 'Testnet: not deployed yet');
+  assert.equal(a.getAttribute('href'), null);
 });
 
 test('invoice escrow notice links the real contract on Arcscan; pay link text uses the one format', async () => {
@@ -269,9 +307,9 @@ test('invoice escrow notice links the real contract on Arcscan; pay link text us
   t.W.updatePayLinkMain?.(); t.D.getElementById('pl-amount').dispatchEvent(new t.W.Event('input', { bubbles: true }));
   await sleep(100);
   assert.match(t.text('#main-pay-link-display'), /^https:\/\/arclance\.xyz\/pay\//);
-  t.D.getElementById('inv-username').value = 'ali hassan'; t.D.getElementById('inv-amount').value = '10'; t.D.getElementById('inv-number').value = 'INV-7';
+  t.D.getElementById('inv-username').value = 'ali hassan'; t.D.getElementById('inv-amount').value = '10'; t.D.getElementById('inv-number').value = 'INV-7'; t.D.getElementById('inv-addr').value = OTHER;
   t.W.updatePayLinkPreview();
-  assert.equal(t.text('#inv-link-text'), 'https://arclance.xyz/pay/ali-hassan/10/INV-7');
+  assert.equal(t.text('#inv-link-text'), `https://arclance.xyz/pay/${OTHER}/10/INV-7?u=ali-hassan`);
 });
 
 test('opening a /pay/<address>/<amount>/<label> URL shows the payment view', async () => {
@@ -340,7 +378,7 @@ test('text fixes: PDF status, FAQ, Pay Link page, guide and chat rule', () => {
   const FREEZE = 'ArcLance never holds your funds and cannot freeze them. USDC itself is issued by Circle, which can blacklist addresses under its own policies.';
   assert.ok(html.includes(FREEZE) && legacy.includes(FREEZE));
   assert.ok(!legacy.includes('No company can freeze') && !html.includes('No. ArcLance is self-custodial'));
-  assert.ok(html.includes('Your client needs a wallet with USDC, or can buy USDC by card through the Buy USDC option.') && !html.includes('no crypto knowledge needed'));
+  assert.ok(!html.includes('no crypto knowledge needed'));
   assert.ok(html.includes('Settles once the transaction is confirmed on Arc Testnet.') && !html.includes('Instant settlement'));
   for (const bad of ['~$1.08', 'BDT 110', 'NGN 1,600']) assert.ok(!legacy.includes(bad), bad);
   assert.equal(legacy.split('Rates change daily. Check Binance P2P or the live rate shown in the app.').length - 1, 3);
@@ -384,11 +422,15 @@ async function addInvoice(t) {
   t.W.WalletState.addInvoice({ number: 'INV-7', client: 'Acme', desc: 'Logo', amount: '25', status: 'pending', walletAddr: OTHER });
 }
 
+// Paying an invoice now opens the same confirmation as Send (full recipient and network) before the wallet.
+async function confirmPay(t) { assert.ok(await t.until(() => t.D.getElementById('sendConfirmOk'), 4000), 'the confirmation opens'); t.D.getElementById('sendConfirmOk').click(); }
+
 test('invoice payment: pending, then confirmed with Arcscan link and receipt', async () => {
   const t = await mount();
   await t.connect(); await addInvoice(t);
   const seen = watchToasts(t);
   const p = t.W.TxManager.payInvoice(0);
+  await confirmPay(t);
   assert.ok(await t.until(() => /INV-7 payment: confirmed/.test(t.text('#toast-container')), 8000), seen.join(' | '));
   await p;
   assert.ok(seen.includes('Invoice INV-7 payment: pending'), 'pending state: ' + seen.join(' | '));
@@ -402,7 +444,8 @@ test('invoice payment: a reverted transaction shows a short reason and Retry', a
   const t = await mount();
   await t.connect(); await addInvoice(t);
   t.chain.receiptStatus = '0x0';
-  await t.W.TxManager.payInvoice(0);
+  const p1 = t.W.TxManager.payInvoice(0);
+  await confirmPay(t); await p1;
   assert.ok(await t.until(() => /INV-7 payment: failed\. The transaction was reverted on Arc Testnet\./.test(t.text('#toast-container')), 8000), t.text('#toast-container'));
   assert.match(t.text('#toast-container'), /Retry/); assert.match(t.D.querySelector('#toast-container a').href, /arcscan/);
   assert.equal(t.W.WalletState.getInvoices()[0].status, 'pending', 'a reverted payment does not stay "paid"');
@@ -410,6 +453,7 @@ test('invoice payment: a reverted transaction shows a short reason and Retry', a
   const before = t.chain.sent.length;
   t.chain.receiptStatus = '0x1';
   t.D.querySelector('#toast-container [data-toast-action]').click();
+  await confirmPay(t);
   assert.ok(await t.until(() => t.chain.sent.length === before + 1, 3000), 'Retry sends the payment again');
 });
 
@@ -417,7 +461,8 @@ test('invoice payment: a rejected signature shows a readable reason and Retry', 
   const t = await mount();
   await t.connect(); await addInvoice(t);
   t.chain.rejectNext = true;
-  await t.W.TxManager.payInvoice(0);
+  const p2 = t.W.TxManager.payInvoice(0);
+  await confirmPay(t); await p2;
   assert.ok(await t.until(() => /INV-7 payment: failed\. You rejected the request in your wallet\. Nothing was sent\./.test(t.text('#toast-container')), 3000), t.text('#toast-container'));
   assert.match(t.text('#toast-container'), /Retry/); assert.equal(t.chain.sent.length, 0);
 });
@@ -458,4 +503,250 @@ test('EURC fallback price: converted values are marked approximate until a live 
   assert.ok(!live.text('#portfolio-amount').startsWith('≈'), live.text('#portfolio-amount'));
   assert.notEqual(live.D.querySelector('#portfolio-amount + [data-approx-note]')?.style.display, '');
   assert.ok(!/approximate, live rate unavailable/.test(live.D.getElementById('page-home').textContent));
+});
+
+// ── browser-only data: backup, import and due dates ──
+const OLD = '2026-10-01T10:00:00.000Z';
+const savedInvoices = [
+  { id: 4, createdAt: new Date().toISOString(), client: 'Future Co', number: 'INV-4', amount: '40', status: 'pending', due: '2099-01-01' },
+  { id: 3, createdAt: OLD, client: 'Past Co', number: 'INV-3', amount: '30', status: 'pending', due: '2020-01-01' },
+  { id: 2, createdAt: OLD, client: 'Free Text Co', number: 'INV-2', amount: '20', status: 'pending', due: '7 days' },
+  { id: 1, createdAt: OLD, client: 'Receipt Co', number: 'INV-1', amount: '10', status: 'pending', due: 'On receipt' },
+];
+
+test('invoices page: backup card with the warning, and the due date is a date picker', async () => {
+  const t = await mount();
+  assert.equal(t.D.getElementById('inv-due').type, 'date');
+  const card = t.text('#backup-card');
+  assert.ok(card.includes('Your invoices are stored only in this browser. Export a backup regularly.'), card);
+  assert.ok(t.D.getElementById('backup-export') && t.D.getElementById('backup-import'));
+  assert.match(t.text('#username-backup-note'), /Usernames are stored only in this browser/);
+});
+
+test('saved invoices keep working: real dates and older free text give the right status', async () => {
+  const t = await mount({ storage: { arclance_invoices: JSON.stringify(savedInvoices) } });
+  t.W.UISync.refreshInvoices();
+  const rows = [...t.D.querySelectorAll('#invoices-list .tx-row')].map((r) => r.textContent.replace(/\s+/g, ' '));
+  assert.equal(rows.length, 4);
+  const find = (n) => rows.find((r) => r.includes(n));
+  assert.match(find('INV-4'), /Pending/i); assert.match(find('INV-4'), /Due: .*2099/);
+  assert.match(find('INV-3'), /Overdue/); assert.match(find('INV-2'), /Overdue/);
+  assert.match(find('INV-1'), /pending/i); assert.doesNotMatch(find('INV-1'), /Overdue/);
+  assert.equal(t.W.WalletState.getInvStats().overdueCount, 2);
+  assert.equal(JSON.parse(t.W.localStorage.getItem('arclance_invoices')).length, 4, 'the saved data itself is not rewritten');
+});
+
+function filePick(t, text) {
+  const input = t.D.getElementById('backup-file');
+  const file = new t.W.File([text], 'backup.json', { type: 'application/json' });
+  Object.defineProperty(input, 'files', { value: [file], configurable: true });
+  input.dispatchEvent(new t.W.Event('change', { bubbles: true }));
+}
+
+test('export writes a JSON backup of the invoices and usernames', async () => {
+  const t = await mount({ storage: { arclance_invoices: JSON.stringify(savedInvoices), arclance_usernames: JSON.stringify({ ali: ME }), arclance_my_username: 'ali' } });
+  let blob; t.W.URL.createObjectURL = (b) => { blob = b; return 'blob:test'; }; t.W.URL.revokeObjectURL = () => {};
+  let name = ''; t.W.HTMLAnchorElement.prototype.click = function () { name = this.download; };
+  t.D.getElementById('backup-export').click();
+  assert.match(name, /^arclance-backup-\d{4}-\d\d-\d\d\.json$/);
+  const text = await new Promise((res) => { const r = new t.W.FileReader(); r.onload = () => res(r.result); r.readAsText(blob); });
+  const data = JSON.parse(text);
+  assert.equal(data.app, 'arclance'); assert.equal(data.version, 1);
+  assert.equal(data.invoices.length, 4); assert.deepEqual(data.usernames, { ali: ME }); assert.equal(data.myUsername, 'ali');
+  assert.match(t.text('#backup-status'), /Exported 4 invoice\(s\) and 1 username\(s\)/);
+});
+
+test('import asks first, adds only what is missing and leaves saved data alone', async () => {
+  const t = await mount({ storage: { arclance_invoices: JSON.stringify(savedInvoices.slice(0, 2)), arclance_usernames: JSON.stringify({ ali: ME }) } });
+  const incoming = { app: 'arclance', version: 1, exportedAt: '', invoices: savedInvoices, usernames: { ali: OTHER, sam: OTHER }, myUsername: null };
+  let asked = '';
+  t.W.confirm = (m) => { asked = m; return false; };
+  filePick(t, JSON.stringify(incoming));
+  assert.ok(await t.until(() => asked !== ''), 'a confirmation is shown');
+  assert.match(asked, /Import 2 invoice\(s\) and 1 username\(s\)/);
+  assert.match(asked, /Nothing already saved is changed or removed/);
+  assert.match(asked, /2 invoice\(s\) already here and 1 username\(s\) with a different address will be skipped/);
+  assert.equal(JSON.parse(t.W.localStorage.getItem('arclance_invoices')).length, 2, 'cancelled: nothing changed');
+  assert.match(t.text('#backup-status'), /Import cancelled\. Nothing was changed\./);
+  t.W.confirm = () => true;
+  filePick(t, JSON.stringify(incoming));
+  assert.ok(await t.until(() => JSON.parse(t.W.localStorage.getItem('arclance_invoices')).length === 4), 'confirmed: the missing invoices are added');
+  assert.deepEqual(JSON.parse(t.W.localStorage.getItem('arclance_usernames')), { ali: ME, sam: OTHER }, 'ali keeps its address; sam is added');
+  assert.match(t.text('#backup-status'), /Imported 2 invoice\(s\) and 1 username\(s\)/);
+  assert.equal(t.D.querySelectorAll('#invoices-list .tx-row').length, 4);
+  filePick(t, JSON.stringify(incoming)); // the same file again
+  assert.ok(await t.until(() => /Nothing new to import/.test(t.text('#backup-status'))), t.text('#backup-status'));
+});
+
+test('a bad backup file is refused and nothing changes', async () => {
+  const t = await mount({ storage: { arclance_invoices: JSON.stringify(savedInvoices) } });
+  let asked = false; t.W.confirm = () => { asked = true; return true; };
+  filePick(t, '{"app":"other"}');
+  assert.ok(await t.until(() => /not an ArcLance backup/.test(t.text('#backup-status'))), t.text('#backup-status'));
+  assert.match(t.text('#backup-status'), /Nothing was changed/);
+  filePick(t, 'not json');
+  assert.ok(await t.until(() => /not a JSON file/.test(t.text('#backup-status'))));
+  assert.equal(asked, false, 'no confirmation for a refused file');
+  assert.equal(JSON.parse(t.W.localStorage.getItem('arclance_invoices')).length, 4);
+});
+
+test('username text says it is saved in this browser, not on-chain', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'src/legacy/16-rates-username.js'), 'utf8');
+  assert.ok(!src.includes('Registering username on Arc Testnet') && !src.includes('registered successfully'));
+  assert.ok(src.includes('saved in this browser. It is not recorded on-chain.'));
+});
+
+// ── trust pages, client guide, roadmap and the sidebar ──
+test('footer pages open: Terms, Privacy, About and Contact are reachable and titled', async () => {
+  const t = await mount();
+  const footer = [...t.D.querySelectorAll('#siteFooter a')];
+  for (const [label, id, title] of [['Terms', 'terms', 'Terms | ArcLance'], ['Privacy', 'privacy', 'Privacy | ArcLance'], ['About', 'about', 'About | ArcLance'], ['Contact', 'contact', 'Contact | ArcLance']]) {
+    footer.find((a) => a.textContent.trim() === label).click();
+    await sleep(60);
+    assert.ok(t.D.getElementById('page-' + id).classList.contains('active'), id + ' page is shown');
+    assert.equal(t.D.title, title);
+  }
+});
+
+test('Terms and Privacy say: testnet demo, non-custodial, no real funds, data in the browser, issuer risk (blacklisting by Circle)', async () => {
+  const t = await mount();
+  const terms = t.text('#page-terms'); const privacy = t.text('#page-privacy');
+  for (const must of [/Testnet demo - no real money/, /Non-custodial/, /Do not send or deposit real money/, /saved only in this browser/, /Circle can blacklist \(freeze\) addresses/, /guaranteed to hold its value/, /not been independently audited/]) assert.match(terms, must);
+  for (const must of [/Testnet demo - no real money/, /Saved in this browser only/, /Public on the blockchain/, /no accounts/i, /does not add advertising or analytics scripts/]) assert.match(privacy, must);
+  assert.match(privacy, /Clear your browser data and all of this is gone/);
+});
+
+test('owner-only facts are marked, not invented', async () => {
+  const t = await mount();
+  for (const id of ['terms', 'privacy', 'about', 'contact']) assert.ok(t.D.querySelectorAll(`#page-${id} .placeholder`).length >= 1, id + ' has a marked placeholder');
+  for (const el of t.D.querySelectorAll('.placeholder')) assert.equal(el.textContent, '[TO BE ADDED BY OWNER]');
+  const contact = t.text('#page-contact');
+  assert.ok(!/@[a-z0-9-]+\.[a-z]{2,}/i.test(contact), 'no email address is made up');
+  assert.ok(t.D.querySelector('#page-contact a[href="https://github.com/PROINWEB3/ArcLancexyz"]') && t.D.querySelector('#page-contact a[href="https://x.com/PROinWeb3"]'));
+});
+
+test('client guide: five real steps; roadmap: planned, no dates, nothing marked available', async () => {
+  const t = await mount();
+  assert.equal(t.D.querySelectorAll('#page-clients ol li').length, 5);
+  const g = t.text('#page-clients');
+  for (const w of [/Install a wallet/, /Get testnet USDC/, /Faucet/, /Open the link/, /Check the address and network/, /Connect your wallet and pay/]) assert.match(g, w);
+  assert.ok(!/Buy USDC|charge a card/.test(g), 'the guide no longer mentions the removed card flow');
+  const r = t.text('#page-roadmap');
+  assert.match(r, /Roadmap \(planned, no dates\)/);
+  for (const w of [/Mainnet/, /Saved data across devices/, /Real on-chain escrow for invoices/, /Local cash-out guides/]) assert.match(r, w);
+  assert.equal((r.match(/Not available/g) || []).length >= 4, true);
+  assert.ok(!/\b20\d\d\b|Q[1-4]\b|coming soon|launch(ing)? (in|on)/i.test(r.replace('Roadmap (planned, no dates)', '')), 'no dates in the roadmap');
+});
+
+test('sidebar: Dashboard, Receive, Invoices and Pay Link stay visible; the rest is under More and still reachable', async () => {
+  const t = await mount();
+  const nav = t.D.querySelector('.sidebar .nav');
+  const label = (el) => el.querySelector('.nav-label').textContent.replace(/\s+/g, ' ').trim();
+  const visible = [...nav.querySelectorAll(':scope > .nav-item')].map(label);
+  assert.deepEqual(visible, ['Home', 'Receive', 'Invoices', 'Pay Link', 'More ▾']);
+  const list = t.D.getElementById('navMoreList');
+  const inMore = [...list.querySelectorAll('.nav-item')].map(label);
+  assert.deepEqual(inMore, ['Send & History', 'Swap', 'Bridge', 'Escrow', 'P2P', 'AI', 'Faucet', 'Docs', 'How to pay an invoice', 'Roadmap', 'About']);
+  assert.ok(!list.classList.contains('open'), 'More starts closed');
+  t.D.getElementById('navMore').click();
+  assert.ok(list.classList.contains('open')); assert.equal(t.D.getElementById('navMore').getAttribute('aria-expanded'), 'true');
+  const expect = { 'Send & History': 'payments', Swap: 'swap', Bridge: 'bridge', Escrow: 'escrow', P2P: 'p2p', AI: 'ai', Faucet: 'faucet', Docs: 'docs', 'How to pay an invoice': 'clients', Roadmap: 'roadmap', About: 'about' };
+  for (const item of list.querySelectorAll('.nav-item')) {
+    item.click(); await sleep(120);
+    const page = expect[label(item)];
+    assert.ok(t.D.getElementById('page-' + page).classList.contains('active'), `${label(item)} opens page-${page}`);
+    assert.ok(item.classList.contains('active'), label(item) + ' is highlighted');
+  }
+  for (const item of [...nav.querySelectorAll(':scope > .nav-item')].filter((i) => i.id !== 'navMore')) {
+    item.click(); await sleep(120);
+    assert.ok(item.classList.contains('active'), label(item) + ' is highlighted');
+  }
+  // Receive opens Payments on the Receive tab; Send & History opens the Send tab
+  [...nav.querySelectorAll(':scope > .nav-item')].find((i) => label(i) === 'Receive').click(); await sleep(120);
+  assert.ok(t.D.getElementById('page-payments').classList.contains('active'));
+  assert.equal(t.D.getElementById('tab-receive').style.display, 'block');
+  list.querySelector('.nav-item').click(); await sleep(120);
+  assert.equal(t.D.getElementById('tab-send').style.display, 'block');
+  // a page opened from code opens More when the page lives there
+  t.D.getElementById('navMore').click();
+  await t.W.navigate('swap'); await sleep(120);
+  assert.ok(list.classList.contains('open')); assert.ok([...list.querySelectorAll('.nav-item')].find((i) => label(i) === 'Swap').classList.contains('active'));
+});
+
+// ── pay links by wallet address, and what the payer sees before paying ──
+test('pay link notes: "Share the wallet-address link so anyone can open it." near each link', async () => {
+  const t = await mount();
+  for (const id of ['link-note-invoice', 'link-note-paylink']) assert.match(t.text(`[data-insert-id="${id}"]`), /^Share the wallet-address link so anyone can open it\.$/);
+  assert.equal(t.D.querySelectorAll('[data-insert-id^="link-note"]').length, 2, 'added once');
+  assert.ok(fs.readFileSync(path.join(ROOT, 'src/legacy/16-rates-username.js'), 'utf8').includes('Share the wallet-address link so anyone can open it.'));
+});
+
+test('invoice and username links pay the wallet address; the username is only a label', async () => {
+  const t = await mount({ storage: { arclance_my_username: 'ali', arclance_usernames: JSON.stringify({ ali: ME }) } });
+  await t.connect();
+  t.D.getElementById('inv-username').value = 'Ali';
+  t.D.getElementById('inv-amount').value = '25'; t.D.getElementById('inv-number').value = 'INV-9'; t.D.getElementById('inv-addr').value = '';
+  t.W.updatePayLinkPreview();
+  assert.equal(t.text('#inv-link-text'), `https://arclance.xyz/pay/${ME}/25/INV-9?u=ali`, 'the connected wallet address is the default');
+  t.D.getElementById('inv-addr').value = OTHER; t.W.updatePayLinkPreview();
+  assert.equal(t.text('#inv-link-text'), `https://arclance.xyz/pay/${OTHER}/25/INV-9?u=ali`, 'a typed address wins');
+  await sleep(200); // the link follows the connected wallet by itself
+  assert.equal(t.text('#shareablePayLink'), `https://arclance.xyz/pay/${ME}?u=ali`);
+});
+
+test('opening a link: new address links and older username links both work, and the payer sees the full address and the network', async () => {
+  const addrLink = await mount({ url: `https://localhost/pay/${OTHER}/25/Logo-design?u=sam` });
+  assert.ok(await addrLink.until(() => addrLink.D.getElementById('paylink-modal').classList.contains('visible'), 4000), 'the payer view opens');
+  assert.equal(addrLink.text('#pl-modal-addr'), OTHER, 'the FULL recipient address is shown');
+  assert.match(addrLink.text('#pl-modal-network'), /Network: Arc Testnet \(chain ID 5042002\)/);
+  assert.match(addrLink.text('#pl-modal-network'), /Name in the link: sam .*not verified/);
+  assert.equal(addrLink.text('#pl-modal-amount'), '25.00 USDC');
+  // an older link with a username as the target still opens where that username is saved
+  const old = await mount({ url: 'https://localhost/pay/ali/10/INV-1', storage: { arclance_usernames: JSON.stringify({ ali: OTHER }) } });
+  assert.ok(await old.until(() => old.D.getElementById('paylink-modal').classList.contains('visible'), 4000));
+  assert.equal(old.text('#pl-modal-addr'), OTHER);
+  assert.match(old.text('#pl-modal-network'), /Name in the link: ali/);
+  // a username that this device does not know is refused with a clear message, not guessed
+  const unknown = await mount({ url: 'https://localhost/pay/nobody/10/INV-1' });
+  assert.ok(await unknown.until(() => /not known on this device/.test(unknown.D.getElementById('toast-container').textContent), 4000));
+  assert.ok(!unknown.D.getElementById('paylink-modal').classList.contains('visible'));
+});
+
+test('paying an invoice shows the full recipient and the network first, and Cancel sends nothing', async () => {
+  const inv = { id: 1, createdAt: new Date().toISOString(), client: 'Acme', number: 'INV-1', amount: '5', status: 'pending', walletAddr: OTHER };
+  const t = await mount({ storage: { arclance_invoices: JSON.stringify([inv]) } });
+  await t.connect();
+  t.W.TxManager.payInvoice(0);
+  assert.ok(await t.until(() => t.D.getElementById('sendConfirmModal'), 3000), 'a confirmation opens before the wallet');
+  const m = t.text('#sendConfirmModal');
+  assert.ok(m.includes(OTHER), 'full recipient address'); assert.match(m, /Network\s*Arc Testnet \(chain ID 5042002\)/);
+  assert.equal(t.chain.sent.length, 0, 'nothing is sent before Confirm');
+  t.D.getElementById('sendConfirmCancel').click(); await sleep(150);
+  assert.equal(t.chain.sent.length, 0, 'Cancel sends nothing');
+  assert.equal(JSON.parse(t.W.localStorage.getItem('arclance_invoices'))[0].status, 'pending');
+});
+
+test('swap approval warning is on the StableFX approval step only; the App Kit route adds nothing', () => {
+  const sw = fs.readFileSync(path.join(ROOT, 'src/legacy/08-swap.js'), 'utf8');
+  assert.ok(sw.includes('Approving lets the Permit2 contract move up to that amount of'));
+  const ak = fs.readFileSync(path.join(ROOT, 'src/legacy/swap-appkit.js'), 'utf8');
+  assert.ok(!/approveExact|Approving lets/.test(ak), 'the App Kit panel requests no approval of its own, so it shows no approval warning');
+});
+
+test('registering a username saves it in the browser and adds no fake transaction or fee', async () => {
+  const t = await mount();
+  await t.connect();
+  const before = t.W.WalletState.getTxHistory().length;
+  const usdcBefore = t.W.WalletState.getUSDC();
+  await t.W.registerUsernameOnChain('Ali Pay');
+  await t.until(() => JSON.parse(t.W.localStorage.getItem('arclance_usernames') || '{}')['ali-pay']);
+  assert.equal(JSON.parse(t.W.localStorage.getItem('arclance_usernames'))['ali-pay'], ME, 'saved locally for the connected wallet');
+  assert.equal(t.W.localStorage.getItem('arclance_my_username'), 'ali-pay');
+  const history = t.W.WalletState.getTxHistory();
+  assert.equal(history.length, before, 'no history row was added');
+  assert.ok(!history.some((x) => /Registered @/.test(x.label || '') || /-0\.05 USDC/.test(x.display || '')), 'no "-0.05 USDC" row');
+  assert.equal(t.W.WalletState.getUSDC(), usdcBefore, 'balance untouched');
+  assert.equal(t.chain.sent.length, 0, 'no transaction was sent: only a message signature');
+  const src = fs.readFileSync(path.join(ROOT, 'src/legacy/16-rates-username.js'), 'utf8');
+  assert.ok(!src.includes('-0.05 USDC') && !src.includes('const fee = 0.05'));
 });

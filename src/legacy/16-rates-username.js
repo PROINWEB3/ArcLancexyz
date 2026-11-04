@@ -107,7 +107,6 @@ async function registerUsernameOnChain(username) {
   const resolved = resolveUsername(clean);
   if (resolved) { showToast('Username already registered!'); return; }
   
-  const fee = 0.05; // 0.05 USDC fee
   const provider = WalletManager.getProvider();
   if (!provider) return;
   
@@ -122,9 +121,9 @@ async function registerUsernameOnChain(username) {
     // Sign a message to prove ownership — no fee transfer to 3rd party address
     const msg = `ArcLance Username Registration: @${clean} | Address: ${WalletState.getAddr()} | Timestamp: ${Date.now()}`;
     const hexMsg = '0x' + Array.from(new TextEncoder().encode(msg)).map(b => b.toString(16).padStart(2,'0')).join('');
-    const txHash = await provider.request({ method: 'personal_sign', params: [hexMsg, WalletState.getAddr()] });
+    await provider.request({ method: 'personal_sign', params: [hexMsg, WalletState.getAddr()] });
 
-    showToast('⏳ Registering username on Arc Testnet...');
+    showToast('⏳ Saving your username in this browser…');
     await new Promise(r => setTimeout(r, 1200));
 
     // Save to local storage registry
@@ -135,9 +134,8 @@ async function registerUsernameOnChain(username) {
     // Save user's own registered username
     localStorage.setItem('arclance_my_username', clean);
 
-    showToast(`Username @${clean} registered successfully!`);
+    showToast(`Username @${clean} saved in this browser. It is not recorded on-chain.`);
     updateUsernameUI();
-    WalletState.addTx({ type:'send', label:`Registered @${clean}`, display:`-0.05 USDC`, hash: txHash, to: WalletState.getAddr(), status:'confirmed' });
     WalletState.triggerChainSync();
   } catch (err) {
     showToast('Username registration failed: ' + (err.message || err));
@@ -151,12 +149,14 @@ function updateUsernameUI() {
   const myUser = localStorage.getItem('arclance_my_username');
   const valEl = document.getElementById('my-username-value');
   const displayBox = document.getElementById('my-username-display');
-  if (valEl) {
+  // The first render replaces the element that held #my-username-value, so do not depend on it for later renders.
+  if (valEl || displayBox) {
     if (myUser) {
-      valEl.textContent = '@' + myUser;
-      valEl.style.color = 'var(--green)';
+      if (valEl) { valEl.textContent = '@' + myUser; valEl.style.color = 'var(--green)'; }
       if (displayBox) {
-        const payUrl = buildPayLink(myUser);
+        const payUrl = buildPayLink(WalletState.getAddr() || '', undefined, undefined, myUser);
+        if (displayBox.dataset.link === payUrl) return; // the link has not changed: keep what is shown (and an open QR code)
+        displayBox.dataset.link = payUrl;
         displayBox.innerHTML = `
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <span style="font-size:12px;color:var(--text2)">Your Registered Username:</span>
@@ -167,6 +167,7 @@ function updateUsernameUI() {
           <div style="margin-top:14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:left">
             <div style="font-size:11px;color:var(--text2);margin-bottom:4px">SHAREABLE PAY LINK</div>
             <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--yellow);word-break:break-all" id="shareablePayLink">${payUrl}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5">Share the wallet-address link so anyone can open it. The username is only a label.</div>
             <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
               <button class="btn btn-sm btn-ghost" onclick="copyShareablePayLink('${payUrl}')" style="font-size:11px;padding:6px 12px;border-radius:8px;color:var(--yellow);border-color:rgba(245,197,24,0.3);cursor:pointer">Copy Pay Link</button>
               <button class="btn btn-sm btn-ghost" onclick="toggleUsernameQR('${payUrl}', '${myUser}')" style="font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer">Show QR Code</button>

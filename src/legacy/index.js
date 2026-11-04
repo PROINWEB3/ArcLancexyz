@@ -21,4 +21,7 @@ import './20-escrow.js';
 import './21-p2p.js';
 import './22-faucet.js';
 import './23-site.js';
-import './99-cross-chain-onramp.js';
+import './24-content.js';
+import './25-backup.js';
+import './26-pages.js';
+import './27-nav.js';

@@ -183,7 +183,13 @@ async function navigate(page, el) {
     paylink: "Pay Link | ArcLance",
     ai: "Assistant | ArcLance",
     faucet: "Faucet | ArcLance",
-    docs: "Docs | ArcLance"
+    docs: "Docs | ArcLance",
+    terms: "Terms | ArcLance",
+    privacy: "Privacy | ArcLance",
+    about: "About | ArcLance",
+    contact: "Contact | ArcLance",
+    clients: "How to pay an invoice | ArcLance",
+    roadmap: "Roadmap | ArcLance"
   };
   if (titles[page]) document.title = titles[page];
 
@@ -214,6 +220,7 @@ async function navigate(page, el) {
     });
   }
   if(el)el.classList.add('active');
+  if (typeof window.AL_onNavigate === 'function') window.AL_onNavigate(page, el);
 }
 function toggleSidebar() {
   _sidebarExpanded=!_sidebarExpanded;
