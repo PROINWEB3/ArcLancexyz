@@ -387,7 +387,7 @@ p,.faucet-sub,.msg{text-wrap:pretty}
 
 /* ── Surfaces ── */
 .sidebar{background:#fff;border-right:1px solid var(--border)}
-.topbar{background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.topbar{position:relative;z-index:200;background:rgba(255,255,255,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm)}
 .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-4);box-shadow:var(--shadow-sm)}
 .card:hover{border-color:var(--border2);box-shadow:var(--shadow-md)}
 .card-glow{opacity:.08}
