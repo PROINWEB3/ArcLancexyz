@@ -34,13 +34,6 @@ export const TEXT_PATCHES = [
   ['Includes line items, tax field, local currencies, and wallet address.', 'Includes local currency amounts and your wallet address. If the description has several lines, each line is listed as an item and the amount is shown split equally across them. There is no tax field.'],
   // ── Cash-out text ──
   ['Rules on crypto differ by country. Check your local regulations. This is not financial advice.', 'Rules, taxes and legality of crypto and of cashing out depend on your country and can change. Check your local rules and ask a qualified adviser. This is not legal, tax or financial advice.'],
-  // ── Removed simulated flows: the old sentences pointed at Buy USDC by card; the multi-chain card no longer claims cross-chain payments ──
-  [', or can buy USDC by card through the Buy USDC option.', '. On testnet they can get free test USDC from the Faucet page.'],
-  ['Aggregated cross-chain liquidity via Circle Gateway. Clients can pay you from any chain (Ethereum, Base, Arc) — you always receive unified native USDC directly on Arc Testnet.', 'Your testnet USDC balance on each network, read from the chain. This view is read-only: use the Bridge to move USDC to Arc Testnet.'],
-  ['CIRCLE GATEWAY · UNIFIED BALANCE KIT', 'BALANCES ON OTHER NETWORKS'],
-  ['Unified USDC', 'Read-only'],
-  ['Circle Gateway Route', 'Read from the chain'],
-  ['Gateway Route', 'Testnet'],
   // ── Escrow tag ──
   ['Until a release or an arbiter decision, the money stays in the contract.', 'Until a release or an arbiter decision, the money stays in the contract. The Escrow tag on an invoice is only a label saved in this browser: it does not lock funds. To lock funds, create an escrow on the Escrow page.'],
 ];
@@ -59,7 +52,7 @@ export const INSERTS = [
 ];
 
 /** Features that were simulations (fake transaction hash and balance) and were removed: hide any leftover markup. */
-export const REMOVALS = ['#topbarBuyUsdcBtn', '#buyUsdcModal', '#crossChainPayModal', '[onclick*="openCrossChainPayModal"]'];
+export const REMOVALS = [];
 
 /** Make a text input a date picker (the due date is stored as a real date, YYYY-MM-DD). */
 export const INPUT_TYPE_PATCHES = [

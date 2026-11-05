@@ -133,9 +133,6 @@
       <div class="topbar-logo"><span>ARC</span><span>LANCE</span></div>
       <div class="topbar-badge" id="netBadge"><span class="live-dot" style="margin-right:4px"></span>Arc Testnet · 5042002</div>
       <div style="flex:1"></div>
-      <button class="btn btn-ghost" id="topbarBuyUsdcBtn" onclick="openBuyUsdcModal()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:700;color:#22d3ee;border:1px solid rgba(34,211,238,0.3);background:rgba(34,211,238,0.08);cursor:pointer;margin-right:10px">
-        <span><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span>Buy USDC</span>
-      </button>
       <div class="notif-btn"><div class="notif-dot"></div><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
       <div id="walletHeaderArea">
         <button class="wallet-btn wallet-btn-disconnected" id="walletBtn" onclick="WalletManager.openModal()">
@@ -237,21 +234,21 @@
               </div>
             </div>
 
-            <!-- MULTI-CHAIN BALANCE (Circle Gateway / Unified Balance Kit) -->
+            <!-- MULTI-CHAIN BALANCE -->
             <div class="card animate" id="multiChainBalanceCard" style="background:linear-gradient(135deg,#070d1e,#0a1329,#0d0a20);border-color:rgba(59,130,246,0.25);padding:24px;position:relative;overflow:hidden">
               <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 85% 15%,rgba(59,130,246,0.08),transparent 60%),radial-gradient(ellipse at 15% 85%,rgba(168,85,247,0.05),transparent 60%);pointer-events:none"></div>
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
                 <div>
-                  <div class="section-label-sm" style="color:#60a5fa;margin-bottom:4px">CIRCLE GATEWAY · UNIFIED BALANCE KIT</div>
+                  <div class="section-label-sm" style="color:#60a5fa;margin-bottom:4px">BALANCES ON OTHER NETWORKS</div>
                   <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text)">Multi-Chain Balance</div>
                 </div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap">
-                  <span class="badge badge-purple" style="background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3)">Unified USDC</span>
-                  <span class="badge badge-green">Gateway Route</span>
+                  <span class="badge badge-purple" style="background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3)">Read-only</span>
+                  <span class="badge badge-green">Testnet</span>
                 </div>
               </div>
               <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.5">
-                Aggregated cross-chain liquidity via Circle Gateway. Clients can pay you from any chain (Ethereum, Base, Arc) — you always receive unified native USDC directly on Arc Testnet.
+                Your testnet USDC balance on each network, read from the chain. This view is read-only: use the Bridge to move USDC to Arc Testnet.
               </div>
               
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">
@@ -267,7 +264,7 @@
                     <span><span style="display:inline-flex;width:18px;height:18px;border-radius:50%;overflow:hidden;vertical-align:-4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="web3icons"><path fill="#8FFCF3" d="M12 3v6.651l5.625 2.516z"></path><path fill="#CABCF8" d="m12 3-5.625 9.166L12 9.653z"></path><path fill="#CBA7F5" d="M12 16.478V21l5.625-7.784z"></path><path fill="#74A0F3" d="M12 21v-4.522l-5.625-3.262z"></path><path fill="#CBA7F5" d="m12 15.43 5.625-3.263L12 9.652z"></path><path fill="#74A0F3" d="M6.375 12.167 12 15.43V9.652z"></path><path fill="#202699" d="m12 15.43-5.625-3.263L12 3l5.624 9.166zm-5.252-3.528 5.161-8.41v6.114zm-.077.229 5.238-2.327v5.364zm5.418-2.327v5.364l5.234-3.037zm0-.198 5.161 2.296-5.161-8.41z" fill-rule="evenodd" clip-rule="evenodd"></path><path fill="#202699" d="m12 16.406-5.625-3.195L12 21l5.624-7.79zm-4.995-2.633 4.904 2.79v4.005zm5.084 2.79v4.005l4.905-6.795z" fill-rule="evenodd" clip-rule="evenodd"></path></svg></span></span> Ethereum Sepolia
                   </div>
                   <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#93c5fd;margin-top:4px" id="gateway-bal-eth">0.00 USDC</div>
-                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Circle Gateway Route</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Read from the chain</div>
                 </div>
                 <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px">
                   <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
@@ -283,9 +280,6 @@
                   <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px">Combined Multi-Chain USDC</div>
                   <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#60a5fa" id="gateway-unified-total">$0.00 USDC</div>
                 </div>
-                <button class="btn btn-primary" onclick="openCrossChainPayModal()" style="padding:10px 18px;font-size:13px;border-radius:10px;display:flex;align-items:center;gap:8px">
-                  <span><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Pay from Any Chain
-                </button>
               </div>
             </div>
 
@@ -844,7 +838,7 @@
           <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,230,118,0.07),transparent 60%);pointer-events:none"></div>
           <div style="font-size:40px;margin-bottom:12px"><svg class="ui-i ui-i-feature" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
           <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:8px">Your Personal Payment Page</div>
-          <div style="font-size:14px;color:var(--text2);margin-bottom:24px;max-width:480px;margin-left:auto;margin-right:auto">Share your payment link with any client worldwide. They click, connect a wallet and pay. Your client needs a wallet with USDC, or can buy USDC by card through the Buy USDC option.</div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:24px;max-width:480px;margin-left:auto;margin-right:auto">Share your payment link with any client worldwide. They click, connect a wallet and pay. Your client needs a wallet with USDC. On testnet, free test USDC is available from the Circle faucet.</div>
           <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border2);border-radius:12px;padding:14px 20px;font-family:'JetBrains Mono',monospace;font-size:15px;display:inline-block;margin-bottom:20px" id="main-pay-link-display">https://arclance.xyz/pay/<span style="color:var(--green)">your-username</span>/<span style="color:var(--yellow)">amount</span>/<span style="color:#a78bfa">service</span></div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="copyMainPayLink()"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> Copy Link</button>
@@ -896,7 +890,7 @@
               </div>
             </div>
             <div style="margin-top:16px;background:var(--surface);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7">
-              <svg class="ui-i ui-i-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Your client needs a wallet with USDC, or can buy USDC by card through the Buy USDC option<br>
+              <svg class="ui-i ui-i-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Your client needs a wallet with USDC. On testnet, free test USDC is available from the Circle faucet.<br>
               <svg class="ui-i ui-i-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> They connect MetaMask or any other wallet<br>
               <svg class="ui-i ui-i-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Payment goes directly to <strong>your</strong> wallet<br>
               <svg class="ui-i ui-i-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Settles in seconds · flat network fee in USDC
@@ -1595,107 +1589,6 @@
       <div style="display:flex; gap:10px;">
         <button class="tx-btn tx-btn-yellow" style="flex:1; padding:12px; font-size:13px;" onclick="downloadHTMLReceipt()">Download Receipt</button>
         <button class="btn btn-ghost" style="padding:12px 20px; font-size:13px; border-radius:14px; border:1px solid var(--border);" onclick="closeReceiptModal()">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CIRCLE ONRAMP MODAL (Feature 14) -->
-  <div class="wallet-overlay" id="buyUsdcModal" style="z-index: 10004;">
-    <div class="wallet-modal" style="max-width: 460px;">
-      <div class="wm-header">
-        <div>
-          <div class="wm-title" style="color:var(--teal); font-family:'Syne',sans-serif; display:flex; align-items:center; gap:8px;">
-            <span><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> Buy USDC on Arc
-          </div>
-          <div style="font-size:12px; color:var(--text2); margin-top:2px;">Circle Onramp Kit · Visa / Mastercard · No MetaMask Required</div>
-        </div>
-        <div class="wm-close" onclick="closeBuyUsdcModal()">✕</div>
-      </div>
-
-      <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:18px;">
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label">You Pay (USD)</label>
-          <div style="position:relative;">
-            <input class="form-input" id="onrampPayAmount" type="number" value="100.00" oninput="updateOnrampEstimate()" style="padding-left:28px; font-size:18px; font-weight:700;">
-            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:700; color:var(--text2);">$</span>
-          </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label">Payment Method</label>
-          <select class="form-select" id="onrampPaymentMethod" style="width:100%; padding:10px; border-radius:10px; background:var(--bg3); border:1px solid var(--border); color:var(--text);">
-            <option value="card">Visa / Mastercard (Debit & Credit)</option>
-            <option value="apple"> Apple Pay</option>
-            <option value="google">G Google Pay</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label">Destination Arc Address</label>
-          <input class="form-input mono" id="onrampDestAddr" type="text" placeholder="0x... (defaults to connected wallet)">
-        </div>
-
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:12px; font-size:12px; line-height:1.6;">
-          <div style="display:flex; justify-content:space-between;"><span style="color:var(--text2)">Exchange Rate</span><strong style="color:var(--text)">1 USD = 1.00 USDC</strong></div>
-          <div style="display:flex; justify-content:space-between;"><span style="color:var(--text2)">Destination Chain</span><strong style="color:var(--yellow)">Arc Testnet (Chain ID 5042002)</strong></div>
-          <div style="display:flex; justify-content:space-between;"><span style="color:var(--text2)">Settlement speed</span><strong style="color:var(--green)">Seconds</strong></div>
-          <div style="display:flex; justify-content:space-between; margin-top:4px; padding-top:6px; border-top:1px dashed var(--border);"><span style="color:var(--text2); font-weight:700;">You Receive</span><strong style="color:var(--teal); font-size:15px;" id="onrampReceiveAmount">100.00 USDC</strong></div>
-        </div>
-      </div>
-
-      <div style="display:flex; gap:10px;">
-        <button class="tx-btn tx-btn-yellow" id="onrampSubmitBtn" style="flex:1; padding:12px; font-size:13px;" onclick="executeCardOnramp()">
-          <span id="onrampSubmitBtnText">PAY WITH CARD VIA CIRCLE</span>
-        </button>
-        <button class="btn btn-ghost" style="padding:12px 18px; font-size:13px; border-radius:14px; border:1px solid var(--border);" onclick="closeBuyUsdcModal()">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CIRCLE GATEWAY UNIFIED CROSS-CHAIN PAY MODAL (Feature 13) -->
-  <div class="wallet-overlay" id="crossChainPayModal" style="z-index: 10004;">
-    <div class="wallet-modal" style="max-width: 480px;">
-      <div class="wm-header">
-        <div>
-          <div class="wm-title" style="color:#60a5fa; font-family:'Syne',sans-serif; display:flex; align-items:center; gap:8px;">
-            <span><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> Pay from Any Chain
-          </div>
-          <div style="font-size:12px; color:var(--text2); margin-top:2px;">Circle Gateway · Pay from Ethereum / Base · Receive on Arc</div>
-        </div>
-        <div class="wm-close" onclick="closeCrossChainPayModal()">✕</div>
-      </div>
-
-      <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:18px;">
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label">Client Source Chain</label>
-          <select class="form-select" id="gatewaySourceChain" style="width:100%; padding:10px; border-radius:10px; background:var(--bg3); border:1px solid var(--border); color:var(--text);">
-            <option value="ethereum">Ethereum Sepolia</option>
-            <option value="base">Base Sepolia</option>
-            <option value="arc">Arc Testnet (Native)</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label">Amount (USDC)</label>
-          <input class="form-input" id="gatewayPayAmount" type="number" placeholder="50.00" value="50.00" style="font-size:16px; font-weight:700;">
-        </div>
-
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label">Recipient Arc Address / @Username</label>
-          <input class="form-input" id="gatewayRecipient" type="text" placeholder="0x... or @username">
-        </div>
-
-        <div style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:10px; padding:12px; font-size:12px; line-height:1.6;">
-          <div style="color:#93c5fd; font-weight:700; margin-bottom:4px;">Circle Gateway Settlement</div>
-          <div style="color:var(--text2);">Client pays USDC on their chosen chain. Gateway liquidity routes the funds so the freelancer receives 100% native USDC on Arc Testnet.</div>
-        </div>
-      </div>
-
-      <div style="display:flex; gap:10px;">
-        <button class="tx-btn tx-btn-yellow" id="gatewayPayBtn" style="flex:1; padding:12px; font-size:13px;" onclick="executeGatewayPay()">
-          <span><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> PAY VIA CIRCLE GATEWAY</span>
-        </button>
-        <button class="btn btn-ghost" style="padding:12px 18px; font-size:13px; border-radius:14px; border:1px solid var(--border);" onclick="closeCrossChainPayModal()">Cancel</button>
       </div>
     </div>
   </div>
