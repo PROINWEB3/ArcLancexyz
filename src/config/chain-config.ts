@@ -282,6 +282,9 @@ export const ESCROW_ADDRESS: string = readAddress('VITE_ESCROW_ADDRESS')
 /** P2P (USDC to local currency) escrow contract on Arc Testnet. Empty until you set VITE_P2P_ADDRESS. */
 export const P2P_ADDRESS: string = readAddress('VITE_P2P_ADDRESS')
 
+/** On-chain username registry contract on Arc Testnet. Empty until you set VITE_USERNAME_REGISTRY_ADDRESS. */
+export const USERNAME_REGISTRY_ADDRESS: string = readAddress('VITE_USERNAME_REGISTRY_ADDRESS')
+
 export const NOT_DEPLOYED_MESSAGE = 'Contract not deployed on this network'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────────────────────

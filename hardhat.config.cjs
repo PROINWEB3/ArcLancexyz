@@ -9,7 +9,7 @@ const { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } = require('hardhat/builtin-task
 // contracts/ (imported Circle sources, Foundry scripts and tests) belong to the Foundry setup.
 subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(async (_args, _hre, runSuper) => {
   const all = await runSuper();
-  return all.filter((p) => /[\\/]contracts[\\/](ArcLanceEscrow\.sol|ArcLanceP2P\.sol|interfaces[\\/]IArcLance(Escrow|P2P)\.sol|mocks[\\/][A-Za-z0-9]+\.sol)$/.test(p));
+  return all.filter((p) => /[\\/]contracts[\\/](ArcLanceEscrow\.sol|ArcLanceP2P\.sol|UsernameRegistry\.sol|interfaces[\\/]IArcLance(Escrow|P2P)\.sol|mocks[\\/][A-Za-z0-9]+\.sol)$/.test(p));
 });
 
 const ARC_TESTNET_RPC_URL = process.env.ARC_TESTNET_RPC_URL || 'https://rpc.testnet.arc.network';
