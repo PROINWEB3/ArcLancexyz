@@ -11,12 +11,9 @@ export const TEXT_PATCHES = [
   ["A payment page for freelancers who can't use PayPal or Payoneer.", 'A payment page for freelancers facing high fees, slow KYC, or limited access to PayPal/Payoneer.'],
   ['vs 4.4% PayPal fee', 'vs ~4.4% PayPal fee (approximate, varies by region and plan)'],
   ['freelancers in countries where traditional payment services like PayPal, Payoneer, and Stripe are restricted or unavailable', 'freelancers who face high fees, slow KYC, or limited access to services like PayPal, Payoneer, and Stripe'],
-  ['Millions of talented freelancers in South Asia and Africa cannot receive payments from international clients because:', 'Many freelancers in South Asia and Africa find it hard to receive payments from international clients, for example because:'],
   ['is unavailable or heavily restricted in Pakistan, Bangladesh, and many African countries', 'can be limited or unavailable in some countries and for some accounts'],
   ['charges 2–3% fees and requires lengthy KYC verification', 'has fees (approximate, varies by region and plan) and its KYC can be slow'],
   ['take 3–5 days and cost $25–$45 per transaction', 'are often slow and carry bank fees (approximate, varies by bank and route)'],
-  ['1 USDC = $1.00 USD exactly', 'USDC is designed to track $1 USD'],
-  [', always.', '.'],
   ['1 USDC = $1.00 USD always.', 'USDC is designed to track $1 USD.'],
   ['Platform fee (ArcLance cut)', 'ArcLance platform fee'],
   // ── Bridge time: no number we cannot verify ──
@@ -33,7 +30,6 @@ export const TEXT_PATCHES = [
   ['Schedule automatic stablecoin payments on a weekly or monthly basis.', 'Save a reminder for a weekly or monthly payment. ArcLance shows the reminder when it is due. It is a reminder, not automatic payment: you send each payment yourself.'],
   ['— pay your virtual assistant or employee automatically every 30 days', '— get a reminder to pay your assistant or employee every 30 days'],
   ['— pay multiple contractors on a fixed schedule', '— get a reminder when each contractor is due'],
-  ['Payments → RECURRING tab', 'Payments → REMINDERS tab'],
   // ── Invoice PDF docs: what the form really has ──
   ['Includes line items, tax field, local currencies, and wallet address.', 'Includes local currency amounts and your wallet address. If the description has several lines, each line is listed as an item and the amount is shown split equally across them. There is no tax field.'],
   // ── Cash-out text ──

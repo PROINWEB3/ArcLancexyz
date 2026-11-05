@@ -70,7 +70,7 @@ test('docs facts: RPC, bridge rows, rates, username tab, disclaimers', () => {
   assert.equal((rawHtml.match(/Arc Testnet ↔ Ethereum Sepolia/g) || []).length, 1, 'bridge row appears once');
   assert.ok(!/PKR 278|INR 83\.5|BDT 110|NGN 1,?600|\$1\.08/.test(rawHtml), 'hard-coded rates removed');
   assert.ok(rawHtml.includes('Rates move daily. Check Binance P2P for current prices.'));
-  assert.ok(rawHtml.includes('Payments → Username tab'));
+  assert.ok(rawHtml.includes('Send & Receive → Username tab'));
   assert.ok(rawHtml.includes('Last verified: 28 October 2026'));
   assert.ok(rawHtml.includes('Rules on crypto differ by country. Check your local regulations. This is not financial advice.'));
   assert.ok(rawHtml.includes('href="https://docs.arc.io"'));
