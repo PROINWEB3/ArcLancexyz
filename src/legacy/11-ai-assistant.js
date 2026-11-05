@@ -277,8 +277,7 @@ const arcElaborations = {
 - If the faucet says "Rate limited", try again in 24 hours or ask in the Discord.
 - Ensure your wallet address is copied exactly.`,
   invoice: `\n\n**Invoice PDF details:**
-- Every invoice generated on ArcLance has a cryptographic signature hash attached.
-- This creates permanent proof of invoice terms that cannot be forged.`,
+- When you create an invoice your wallet signs a message. Only a short prefix of that signature is saved in your browser. Invoices are not stored on-chain.`,
   failed: `\n\n**Gas Troubleshooting:**
 - Since Arc Network uses USDC for gas, native USDC must be present in the wallet address.
 - Standard Ethereum MetaMask wallets might show 'Insufficient ETH' if not configured to the Arc Testnet RPC correctly.`

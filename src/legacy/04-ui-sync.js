@@ -329,7 +329,7 @@ const UISync = (() => {
         badgeHtml = `<span class="badge badge-yellow">${status}</span>`;
       }
       if (inv.isEscrow) {
-        badgeHtml += ` <span class="badge badge-purple" style="font-size:10px">Escrow (${inv.escrowStatus || 'Active'})</span>`;
+        badgeHtml += ` <span class="badge badge-purple" style="font-size:10px">${inv.escrowStatus || 'Escrow tag (local)'}</span>`;
       }
       
       const canPay = status !== 'paid' && inv.walletAddr && WalletState.connected();
