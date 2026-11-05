@@ -114,7 +114,7 @@ test('one pay link format: https://arclance.xyz/pay/<username-or-address>/<amoun
 });
 
 // ── page harness ──
-async function mount({ url = 'https://localhost/', walletChain = '0x4cef52', rates = 'ok', prices = 'fail', balances = { USDC: 5000n * 10n ** 6n }, useBundle, storage = {} } = {}) {
+async function mount({ url = 'https://localhost/', walletChain = '0x4cef52', rates = 'ok', prices = 'fail', balances = { USDC: 5000n * 10n ** 6n }, useBundle, storage = {}, registryAddr = '', registryNames = {} } = {}) {
   const chain = { id: walletChain, sent: [], methods: [], balances, switchAttempts: 0, receiptStatus: '0x1', rejectNext: false };
   const errors = []; const vc = new VirtualConsole(); vc.on('jsdomError', (e) => errors.push(e.message));
   const hex = (n) => '0x' + BigInt(n).toString(16).padStart(64, '0');
@@ -129,6 +129,10 @@ async function mount({ url = 'https://localhost/', walletChain = '0x4cef52', rat
       const { to, data } = params[0];
       if (data.startsWith('0x70a08231')) return hex(to.toLowerCase() === USDC.toLowerCase() ? chain.balances.USDC : to.toLowerCase() === EURC.toLowerCase() ? (chain.balances.EURC || 0n) : 0n);
       if (data.startsWith('0x313ce567')) return hex(6);
+      if (registryAddr && to.toLowerCase() === registryAddr.toLowerCase()) {
+        if (data.startsWith('0x461a4478')) { const len = parseInt(data.slice(74, 138), 16) || 0; const q = Buffer.from(data.slice(138, 138 + len * 2), 'hex').toString('utf8').toLowerCase(); const owner = registryNames[q]; return owner ? '0x' + owner.slice(2).toLowerCase().padStart(64, '0') : hex(0); }
+        if (data.startsWith('0xa91bd1a5')) return '0x' + '00'.repeat(31) + '20' + '00'.repeat(32);
+      }
       return hex(0);
     }
     return null;
@@ -136,6 +140,7 @@ async function mount({ url = 'https://localhost/', walletChain = '0x4cef52', rat
   const dom = new JSDOM(HTML, {
     url, runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
+      if (registryAddr) w.__ARCLANCE_USERNAME_REGISTRY__ = registryAddr;
       for (const [k, v] of Object.entries(storage)) w.localStorage.setItem(k, v);
       w.fetch = async (u, o = {}) => {
         const s = String(u);
@@ -643,14 +648,14 @@ test('sidebar: Dashboard, Receive, Invoices and Pay Link stay visible; the rest 
   const nav = t.D.querySelector('.sidebar .nav');
   const label = (el) => el.querySelector('.nav-label').textContent.replace(/\s+/g, ' ').trim();
   const visible = [...nav.querySelectorAll(':scope > .nav-item')].map(label);
-  assert.deepEqual(visible, ['Home', 'Receive', 'Invoices', 'Pay Link', 'More ▾']);
+  assert.deepEqual(visible, ['Home', 'Invoices', 'Pay Link', 'More ▾']);
   const list = t.D.getElementById('navMoreList');
   const inMore = [...list.querySelectorAll('.nav-item')].map(label);
-  assert.deepEqual(inMore, ['Send & History', 'Swap', 'Bridge', 'Escrow', 'P2P', 'AI', 'Faucet', 'Docs', 'How to pay an invoice', 'Roadmap', 'About']);
+  assert.deepEqual(inMore, ['Send & Receive', 'Swap', 'Bridge', 'Escrow', 'P2P', 'AI', 'Faucet', 'Docs', 'How to pay an invoice', 'Roadmap', 'About']);
   assert.ok(!list.classList.contains('open'), 'More starts closed');
   t.D.getElementById('navMore').click();
   assert.ok(list.classList.contains('open')); assert.equal(t.D.getElementById('navMore').getAttribute('aria-expanded'), 'true');
-  const expect = { 'Send & History': 'payments', Swap: 'swap', Bridge: 'bridge', Escrow: 'escrow', P2P: 'p2p', AI: 'ai', Faucet: 'faucet', Docs: 'docs', 'How to pay an invoice': 'clients', Roadmap: 'roadmap', About: 'about' };
+  const expect = { 'Send & Receive': 'payments', Swap: 'swap', Bridge: 'bridge', Escrow: 'escrow', P2P: 'p2p', AI: 'ai', Faucet: 'faucet', Docs: 'docs', 'How to pay an invoice': 'clients', Roadmap: 'roadmap', About: 'about' };
   for (const item of list.querySelectorAll('.nav-item')) {
     item.click(); await sleep(120);
     const page = expect[label(item)];
@@ -662,7 +667,7 @@ test('sidebar: Dashboard, Receive, Invoices and Pay Link stay visible; the rest 
     assert.ok(item.classList.contains('active'), label(item) + ' is highlighted');
   }
   // Receive opens Payments on the Receive tab; Send & History opens the Send tab
-  [...nav.querySelectorAll(':scope > .nav-item')].find((i) => label(i) === 'Receive').click(); await sleep(120);
+  await t.W.openPaymentsTab('receive'); await sleep(120);
   assert.ok(t.D.getElementById('page-payments').classList.contains('active'));
   assert.equal(t.D.getElementById('tab-receive').style.display, 'block');
   list.querySelector('.nav-item').click(); await sleep(120);
@@ -749,4 +754,45 @@ test('registering a username saves it in the browser and adds no fake transactio
   assert.equal(t.chain.sent.length, 0, 'no transaction was sent: only a message signature');
   const src = fs.readFileSync(path.join(ROOT, 'src/legacy/16-rates-username.js'), 'utf8');
   assert.ok(!src.includes('-0.05 USDC') && !src.includes('const fee = 0.05'));
+});
+
+test('pay link creator and receive tab: verified with connected wallet and with none', async () => {
+  const REG = '0x1111111111111111111111111111111111111111';
+  const anon = await mount({ registryAddr: REG, registryNames: { 'ali-dev': OTHER } });
+  await anon.W.navigate('paylink'); await sleep(80);
+  const plInput = anon.D.getElementById('pl-wallet');
+  assert.equal(plInput.readOnly, false); assert.equal(plInput.hasAttribute('readonly'), false);
+  assert.equal(plInput.value, '', 'starts empty when no wallet is connected');
+  anon.W.onPlWalletInput('@ali-dev'); anon.D.getElementById('pl-amount').value = '75'; anon.D.getElementById('pl-service').value = 'Web Dev'; anon.W.updatePayLinkMain();
+  assert.ok(await anon.until(() => anon.text('#pl-wallet-resolve').includes('0x3C44...93BC'), 3000));
+  assert.equal(anon.D.getElementById('pl-copy-btn').disabled, false);
+  assert.match(anon.text('#main-pay-link-display'), /https:\/\/arclance\.xyz\/pay\/ali-dev\/75\/Web-Dev/);
+  assert.match(anon.text('#main-pay-link-display'), /0x3C44\.\.\.93BC/);
+  anon.W.onPlWalletInput('@nobody-here');
+  assert.ok(await anon.until(() => anon.text('#pl-wallet-resolve') === 'Name not registered', 3000));
+  assert.equal(anon.D.getElementById('pl-copy-btn').disabled, true);
+  await anon.W.openPaymentsTab('receive'); await sleep(80);
+  assert.ok(anon.D.getElementById('page-payments').classList.contains('active'));
+  assert.equal(anon.D.getElementById('tab-receive').style.display, 'block');
+  assert.equal(anon.D.getElementById('qr-image').style.display, 'none');
+  assert.match(anon.text('#qr-status-msg'), /Connect wallet or enter address to generate QR/);
+
+  const conn = await mount({ registryAddr: REG, registryNames: { 'ali-dev': OTHER } });
+  await conn.connect();
+  await conn.W.navigate('paylink'); await sleep(80);
+  const cInput = conn.D.getElementById('pl-wallet');
+  assert.equal(cInput.value, ME, 'pre-filled once with the connected wallet');
+  conn.W.onPlWalletInput(OTHER);
+  conn.W.UISync.refresh();
+  assert.equal(cInput.value, OTHER, 'never overwrites what the user typed');
+  conn.D.getElementById('pl-use-wallet-btn').click();
+  assert.equal(cInput.value, ME, '"Use my wallet" button refills on demand');
+  await conn.W.navigate('receive'); await sleep(80);
+  assert.ok(conn.D.getElementById('page-payments').classList.contains('active'));
+  assert.equal(conn.D.getElementById('tab-receive').style.display, 'block');
+  assert.equal(conn.D.getElementById('receive-addr-input').value, ME);
+  assert.equal(conn.D.getElementById('qr-image').style.display, 'block');
+  assert.equal(conn.text('#receive-addr-display'), ME);
+});
+test('username fee check', () => { const src = fs.readFileSync(path.join(ROOT, 'src/legacy/16-rates-username.js'), 'utf8'); assert.ok(!src.includes('-0.05 USDC') && !src.includes('const fee = 0.05'));
 });

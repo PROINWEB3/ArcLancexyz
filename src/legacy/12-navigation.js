@@ -148,7 +148,7 @@ const ActivityGraph = (() => {
 
 
 let _sidebarExpanded=false;
-async function navigate(page, el) {
+async function navigate(page, el) { const openReceiveTab = page === 'receive'; if (openReceiveTab) page = 'payments';
   toggleMobileNav(false);
   // 2. If connected, check if Arc Testnet is selected and switch silently if wrong network
   const provider = WalletManager.getProvider();
@@ -208,7 +208,7 @@ async function navigate(page, el) {
   }
   const target=document.getElementById('page-'+page);
   if(target){
-    target.classList.add('active');
+    target.classList.add('active'); if (openReceiveTab && typeof switchPayTab === 'function') switchPayTab('receive', document.querySelector(`.pay-tab[onclick*="'receive'"]`));
     requestAnimationFrame(()=>{
       if (window.AL_pages && typeof window.AL_pages[page] === 'function') { try { window.AL_pages[page](); } catch (e) { console.error('[ArcLance] page error', page, e); } }
       UISync.refresh();

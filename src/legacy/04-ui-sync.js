@@ -94,7 +94,7 @@ const UISync = (() => {
     // Auto-fill paylink wallet address if connected
     const plWalletEl = document.getElementById('pl-wallet');
     if (plWalletEl && WalletState.getAddr()) {
-      if (plWalletEl.value !== WalletState.getAddr()) {
+      if (!plWalletEl.dataset.prefilled && !plWalletEl.dataset.userEdited && !plWalletEl.value) { plWalletEl.dataset.prefilled = '1';
         plWalletEl.value = WalletState.getAddr();
         if (typeof updateMainPayLink === 'function') updateMainPayLink();
       }

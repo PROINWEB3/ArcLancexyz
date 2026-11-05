@@ -857,8 +857,8 @@
           <div class="card animate">
             <div class="section-title" style="margin-bottom:18px">Customize Your Link</div>
             <div class="form-group">
-              <label class="form-label">Your Wallet Address</label>
-              <input class="form-input" id="pl-wallet" type="text" placeholder="Connect wallet to auto-fill" readonly>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px"><label class="form-label" style="margin:0">Your Wallet Address</label><button type="button" class="btn btn-ghost btn-sm" id="pl-use-wallet-btn" onclick="useMyWalletForPayLink()" style="padding:3px 10px;font-size:11px">Use my wallet</button></div>
+              <input class="form-input" id="pl-wallet" type="text" placeholder="0x... or @username" oninput="onPlWalletInput(this.value)" style="user-select:text;-webkit-user-select:text"><div id="pl-wallet-resolve" role="status" style="display:none;font-size:12px;margin-top:6px;line-height:1.5"></div>
               <div style="font-size:12px;color:var(--text2);margin-top:6px;word-break:break-all">https://arclance.xyz/pay/<strong id="pl-wallet-preview" style="color:var(--green)">your-wallet-address</strong></div>
             </div>
             <div class="form-group">
@@ -875,7 +875,7 @@
               <span style="font-size:12px">🇮🇳 <span style="color:var(--green);font-weight:700" id="pl-inr">—</span> INR</span>
               <span style="font-size:12px">🇧🇩 <span style="color:var(--teal);font-weight:700" id="pl-bdt">—</span> BDT</span>
             </div>
-            <button class="tx-btn tx-btn-yellow" onclick="copyMainPayLink()"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> COPY PAYMENT LINK</button>
+            <button class="tx-btn tx-btn-yellow" id="pl-copy-btn" onclick="copyMainPayLink()"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> COPY PAYMENT LINK</button>
           </div>
 
           <!-- PREVIEW CLIENT VIEW -->

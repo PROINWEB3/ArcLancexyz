@@ -1,15 +1,23 @@
-// Sidebar: Dashboard, Receive, Invoices and Pay Link stay visible; everything else sits under "More".
+// Sidebar: Dashboard, Invoices and Pay Link stay visible; Send & Receive (with Receive tab inside it) and everything else sit under "More".
 // Every page is still reachable. The items keep their own click handlers: they are only moved.
 import { publish } from './publish.js';
 import { uiIcon } from '../assets/ui-icons';
 
-const pageOf = (el) => { const m = /navigate\('([a-z0-9-]+)'/.exec(el.getAttribute('onclick') || ''); return m ? m[1] : null; };
+const pageOf = (el) => {
+  const onclick = el?.getAttribute?.('onclick') || '';
+  const m = /navigate\('([a-z0-9-]+)'/.exec(onclick);
+  if (m) return m[1] === 'receive' ? 'payments' : m[1];
+  if (/openPaymentsTab\(/.test(onclick)) return 'payments';
+  return null;
+};
 
 // Open the Payments page on one of its tabs (send, receive, history, ...).
-function openPaymentsTab(tab, el) {
-  navigate('payments', el);
-  const btn = document.querySelector(`.pay-tab[onclick*="'${tab}'"]`);
-  if (btn && typeof switchPayTab === 'function') switchPayTab(tab, btn);
+function openPaymentsTab(tab = 'send', el) {
+  const resolvedTab = tab || 'send';
+  const navTarget = (el && el.classList && el.classList.contains('nav-item') && document.querySelector('.sidebar')?.contains(el)) ? el : undefined;
+  navigate('payments', navTarget);
+  const btn = document.querySelector(`.pay-tab[onclick*="'${resolvedTab}'"]`);
+  if (typeof switchPayTab === 'function') switchPayTab(resolvedTab, btn);
 }
 
 function toggleNavMore(force) {
@@ -36,14 +44,11 @@ function buildNav() {
   const list = document.createElement('div');
   list.id = 'navMoreList'; list.className = 'nav-more-list';
 
-  // "Receive" stays visible (the Payments page, opened on its Receive tab); Send and History go under More.
+  // Remove the separate top-level "Receive" item; rename "Send & History" to "Send & Receive" with the Receive tab inside it.
   if (payments) {
-    const sendItem = payments.cloneNode(true);
-    sendItem.querySelector('.nav-label').textContent = 'Send & History';
-    sendItem.setAttribute('onclick', "openPaymentsTab('send',this)");
-    list.appendChild(sendItem);
-    payments.querySelector('.nav-label').textContent = 'Receive';
-    payments.setAttribute('onclick', "openPaymentsTab('receive',this)");
+    payments.querySelector('.nav-label').textContent = 'Send & Receive';
+    payments.setAttribute('onclick', "openPaymentsTab('send',this)");
+    list.appendChild(payments);
   }
   for (const p of ['swap', 'bridge', 'escrow', 'p2p', 'ai', 'faucet', 'docs']) { const it = by(p); if (it) list.appendChild(it); }
   list.appendChild(navItem('clients', 'How to pay an invoice', 'file'));
@@ -62,9 +67,10 @@ function buildNav() {
 // Called by navigate(): highlight the item for the page (also when navigate() was called from code) and open More when it holds it.
 window.AL_onNavigate = (page, el) => {
   const list = document.getElementById('navMoreList');
-  let target = el;
+  let target = (el && pageOf(el) === page && document.querySelector('.sidebar')?.contains(el)) ? el : null;
   if (!target) {
-    target = [...document.querySelectorAll('.sidebar .nav-item')].find((i) => pageOf(i) === page || (page === 'payments' && /openPaymentsTab\('receive'/.test(i.getAttribute('onclick') || '')));
+    document.querySelectorAll('.sidebar .nav-item').forEach((n) => n.classList.remove('active'));
+    target = [...document.querySelectorAll('.sidebar .nav-item')].find((i) => pageOf(i) === page);
     if (target) target.classList.add('active');
   }
   if (list && target && list.contains(target)) toggleNavMore(true);

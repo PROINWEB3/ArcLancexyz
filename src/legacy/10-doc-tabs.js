@@ -33,15 +33,16 @@ function showDoc(id, btn) {
 
 function switchPayTab(tab, btn) {
   document.querySelectorAll('.pay-tab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
+  const targetBtn = btn || document.querySelector(`.pay-tab[onclick*="'${tab}'"]`);
+  if (targetBtn) targetBtn.classList.add('active');
   ['send','receive','history','username','recurring'].forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'block':'none';});
   if (tab === 'receive') {
     const addr = WalletState.getAddr();
     const input = document.getElementById('receive-addr-input');
     if (input && addr && !input.value) {
       input.value = addr;
-      generateQR();
     }
+    if (typeof generateQR === 'function') generateQR();
   }
 }
 
