@@ -58,7 +58,7 @@ const UISync = (() => {
     // the username pay link uses the connected wallet address, so refresh it when the wallet changes
     if (typeof window.updateUsernameUI === 'function') window.updateUsernameUI();
 
-    // Update Multi-Chain Unified Balance (Circle Gateway)
+    // Update Multi-Chain balance
     const arcUSDC = WalletState.getTokenBal('USDC', 'ARC');
     // Peer-chain balances are read from each chain's RPC. Unknown or failed reads show an em dash, never a made-up number.
     const ethPeer = WalletState.getPeerBalance('sepolia');
