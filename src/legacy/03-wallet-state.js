@@ -8,7 +8,6 @@ import { effectiveStatus } from '../lib/invoice-due';
 ══════════════════════════════════════ */
 const WalletState = (() => {
   const LS = {
-    ADDR:        'arclance_wallet_addr',
     TX:          'arclance_tx_history',
     INV:         'arclance_invoices',
     BRIDGE:      'arclance_bridge_stats',
@@ -33,7 +32,7 @@ const WalletState = (() => {
     } catch(e) { console.warn('localStorage load error:', e); }
   }
 
-  let _addr = localStorage.getItem('arclance_wallet_addr') || null;
+  let _addr = null;
   let _txHistory = [];
   let _invoices = [];
   let _bridgeStats = { volume: 0, count: 0, fees: 0 };

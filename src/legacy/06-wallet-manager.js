@@ -6,9 +6,9 @@ import { ARC } from '../config/chain-config';
    WALLET MANAGER  — v2 (fixed detection)
 ══════════════════════════════════════ */
 const WalletManager = (() => {
-  let _addr = localStorage.getItem('arclance_wallet_addr') || null;
-  let _walletName = localStorage.getItem('arclance_wallet_name') || null;
-  let _walletKey = localStorage.getItem('arclance_wallet_key') || null;
+  let _addr = null;
+  let _walletName = null;
+  let _walletKey = null;
   let _connecting = null;
   let _autoClose = null;
   let _activeProvider = null; // provider used for signing after connect
@@ -558,7 +558,6 @@ const WalletManager = (() => {
     }
     
     _connecting = walletKey;
-    _activeProvider = provider;
 
     console.log(`[ArcLance Web3] Connection request sent to provider for: ${walletName}...`);
 
@@ -592,30 +591,44 @@ const WalletManager = (() => {
       }
 
       if (!accs?.length) throw new Error('No accounts returned from wallet.');
-      _addr = accs[0];
-      _walletName = walletName;
-      _walletKey = walletKey;
+      const nextAddr = accs[0];
 
       console.log(`[ArcLance Web3] Wallet response received! Accounts: `, accs);
 
-      // Save connection state for automatic reconnect immediately
-      localStorage.setItem('arclance_wallet_addr', _addr);
-      localStorage.setItem('arclance_wallet_name', _walletName);
-      localStorage.setItem('arclance_wallet_key', _walletKey);
-
       if (!silent) _progress(70);
+
+      // 2. Switch or Add Arc Testnet using our unified helper
+      if (!silent) {
+        const networkOk = await ensureArcNetwork(provider);
+        if (!networkOk) showToast('⚠️ Please switch your wallet network to Arc Testnet.');
+      }
+
+      // 3. Require signature before marking wallet as connected
+      if (!silent) {
+        const signMsg = 'Sign in to ArcLance. This does not cost gas.';
+        const hexMsg = '0x' + Array.from(new TextEncoder().encode(signMsg)).map(b => b.toString(16).padStart(2, '0')).join('');
+        try {
+          const sig = await provider.request({ method: 'personal_sign', params: [hexMsg, nextAddr] });
+          if (!sig) throw new Error('Signature failed. Wallet not connected.');
+        } catch (signErr) {
+          const rejectMsg = signErr?.code === 4001
+            ? 'Signature rejected. Wallet not connected.'
+            : 'Signature failed. Wallet not connected.';
+          showToast(rejectMsg);
+          throw new Error(rejectMsg);
+        }
+      }
+
+      _addr = nextAddr;
+      _walletName = walletName;
+      _walletKey = walletKey;
+      _activeProvider = provider;
 
       // Listen for account and network changes on active provider
       if (provider.on) {
         provider.on('accountsChanged', handleAccountsChanged);
         provider.on('chainChanged', handleChainChanged);
         provider.on('disconnect', handleDisconnect);
-      }
-
-      // 2. Switch or Add Arc Testnet using our unified helper
-      if (!silent) {
-        const networkOk = await ensureArcNetwork(provider);
-        if (!networkOk) showToast('⚠️ Please switch your wallet network to Arc Testnet.');
       }
 
       if (!silent) _progress(100);
@@ -681,11 +694,12 @@ const WalletManager = (() => {
 
     } catch(e) {
       console.error(`[ArcLance Web3] Connection error:`, e);
-      localStorage.removeItem('arclance_wallet_addr');
-      localStorage.removeItem('arclance_wallet_name');
-      localStorage.removeItem('arclance_wallet_key');
-      
+      _addr = null;
+      _walletName = null;
+      _walletKey = null;
+      _activeProvider = null;
       _connecting = null;
+      _updateBtn();
       renderWalletOptions(); // Re-render to clear spinner/errors
       
       if (!silent) {
@@ -734,10 +748,6 @@ const WalletManager = (() => {
 
   function disconnect() {
     console.log(`[ArcLance Web3] Disconnecting wallet...`);
-    localStorage.removeItem('arclance_wallet_addr');
-    localStorage.removeItem('arclance_wallet_name');
-    localStorage.removeItem('arclance_wallet_key');
-    
     if (_activeProvider && _activeProvider.removeListener) {
       _activeProvider.removeListener('accountsChanged', handleAccountsChanged);
       _activeProvider.removeListener('chainChanged', handleChainChanged);
@@ -848,16 +858,7 @@ const WalletManager = (() => {
   }
 
   function getProvider() {
-    if (_activeProvider) return _activeProvider;
-    const savedKey = localStorage.getItem('arclance_wallet_key');
-    if (savedKey) {
-      const p = _providerFor(savedKey);
-      if (p) {
-        _activeProvider = p;
-        return p;
-      }
-    }
-    return window.ethereum || null;
+    return _activeProvider || null;
   }
   
   function handleAnnounce(rdns) {
@@ -898,44 +899,15 @@ const WalletManager = (() => {
       if (e.key === 'Escape') { closeModal(); if(typeof closeSearch==='function') closeSearch(); }
     });
 
-
-    _updateBtn();
-    renderWalletOptions();
-
-    // Auto-reconnect: restore the previous session silently (eth_accounts, no popup).
-    // A manual disconnect clears the saved session, so it is never restored.
-    const savedKey = localStorage.getItem('arclance_wallet_key');
-    const savedName = localStorage.getItem('arclance_wallet_name');
-    try { localStorage.removeItem('arclance_eurc_credit'); } catch (_) {}
+    try {
+      localStorage.removeItem('arclance_wallet_addr');
+      localStorage.removeItem('arclance_wallet_name');
+      localStorage.removeItem('arclance_wallet_key');
+      localStorage.removeItem('arclance_eurc_credit');
+    } catch (_) {}
     _addr = null; _walletName = null; _walletKey = null; _activeProvider = null;
     _updateBtn();
-
-    let reconnectAttempts = 0;
-    async function attemptAutoReconnect() {
-      if (!savedKey || savedKey === 'passkey' || _addr || _connecting) return;
-      const provider = _providerFor(savedKey) || window.__eip6963_announcements.get(savedKey)?.provider;
-      if (provider) {
-        console.log(`[ArcLance Web3] Session found for ${savedName} — silently restoring without popup`);
-        try {
-          const accs = await provider.request({ method: 'eth_accounts' });
-          if (!accs || accs.length === 0) {
-            // Wallet locked or access revoked: clear session, never prompt
-            localStorage.removeItem('arclance_wallet_addr');
-            localStorage.removeItem('arclance_wallet_name');
-            localStorage.removeItem('arclance_wallet_key');
-            return;
-          }
-          await _connectWithProvider(savedName || 'Wallet', provider, savedKey, true);
-        } catch (err) {
-          console.warn('[ArcLance Web3] Auto-reconnect failed:', err);
-        }
-      } else if (reconnectAttempts < 8) {
-        // Provider not injected yet (extensions inject asynchronously)
-        reconnectAttempts++;
-        setTimeout(attemptAutoReconnect, 300);
-      }
-    }
-    attemptAutoReconnect();
+    renderWalletOptions();
   }
 
   // Feature 15: Passkey Wallet Login (Circle Modular Wallets - ERC-4337 + WebAuthn)
@@ -947,7 +919,7 @@ const WalletManager = (() => {
     try {
       showToast('🔐 Authenticating Face ID / Touch ID via Circle Modular Wallets…');
       let passkeyAddr = localStorage.getItem('arclance_passkey_addr');
-      
+
       if (!passkeyAddr) {
         if (window.PublicKeyCredential && typeof navigator.credentials?.create === 'function') {
           try {
@@ -980,9 +952,6 @@ const WalletManager = (() => {
       _addr = passkeyAddr;
       _walletName = 'Passkey (Circle Modular)';
       _walletKey = 'passkey';
-      localStorage.setItem('arclance_wallet_addr', _addr);
-      localStorage.setItem('arclance_wallet_name', _walletName);
-      localStorage.setItem('arclance_wallet_key', _walletKey);
       
       _progress(100);
       _connecting = null;
