@@ -358,7 +358,7 @@ const TxManager = (() => {
         escrowStatus: isEscrow ? 'Escrow tag (local)' : null,
         sig: sig.slice(0,12)+'…'
       });
-      showToast(`Invoice ${number} created!${isEscrow ? ' (Escrow Active)' : ''}`);
+      showToast(`Invoice ${number} created!${isEscrow ? ' (Escrow tag, local only)' : ''}`);
       ['inv-client','inv-your-name','inv-number','inv-amount','inv-desc'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
     } catch(e) {
       _setState('invBtn','invBtnContent','failed',base);
@@ -380,9 +380,9 @@ const TxManager = (() => {
     const invs = WalletState.getInvoices();
     const inv = invs[idx];
     if (!inv) return;
-    showToast(`⏳ Releasing escrow for Invoice #${inv.number} on Arc Testnet…`);
+    showToast(`Marking escrow tag as released locally for Invoice #${inv.number} (no funds move)…`);
     await delay(1000);
-    inv.escrowStatus = 'Released to Freelancer';
+    inv.escrowStatus = 'Tag: released (local)';
     inv.status = 'paid';
     WalletState.addTx({
       type: 'send',
