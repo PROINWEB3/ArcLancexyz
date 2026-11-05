@@ -681,5 +681,3 @@ span:has(>svg.web3icons>path[fill="url(#arc__a)"]){background:linear-gradient(18
 .placeholder{background:rgba(245,184,0,0.25);color:var(--ink);padding:1px 6px;border-radius:6px;font-weight:600;font-size:12px}
 .sidebar .nav{overflow-y:auto;min-height:0;scrollbar-width:none}
 .sidebar .nav::-webkit-scrollbar{display:none}
-/* Removed simulated flows (Buy USDC by card, Pay from Any Chain): never show leftover markup */
-#topbarBuyUsdcBtn,#buyUsdcModal,#crossChainPayModal,[onclick*="openCrossChainPayModal"]{display:none!important}
