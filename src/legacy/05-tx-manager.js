@@ -2,6 +2,8 @@
 // Ported verbatim from the original single-file index.html.
 import { publish } from './publish.js';
 import { ARC, arcTxUrl } from '../config/chain-config';
+import { isRegistryConfigured, resolveNameOnChain, formatShortAddr } from './16-rates-username.js';
+import { onPayRecipientInput } from './17-paylink-payer.js';
 /* ══════════════════════════════════════
    TX MANAGER (requires real wallet sig)
 ══════════════════════════════════════ */
@@ -246,15 +248,29 @@ const TxManager = (() => {
     const amount = parseFloat(document.getElementById('payAmount')?.value) || 0;
     let recipient = document.getElementById('payRecipient')?.value?.trim() || '';
     const token = document.getElementById('payToken')?.value || 'USDC';
-    
-    // Feature 16: Allow clients to pay by @username directly
-    if (recipient.startsWith('@') || (!recipient.startsWith('0x') && typeof resolveUsername === 'function' && resolveUsername(recipient))) {
-      const resolved = resolveUsername(recipient);
-      if (resolved) {
-        recipient = resolved;
-      } else {
-        showToast('Username not found in Arc registry');
-        return;
+    const modeRadio = document.querySelector('input[name="payRecipientType"]:checked');
+    const isUsernameMode = modeRadio ? modeRadio.value === 'username' : false;
+
+    if (isRegistryConfigured()) {
+      if (isUsernameMode || recipient.startsWith('@') || (recipient && !recipient.startsWith('0x'))) {
+        await onPayRecipientInput(recipient);
+        const res = await resolveNameOnChain(recipient);
+        if (!res.ok || !res.address) {
+          showToast('Name not registered');
+          return;
+        }
+        recipient = res.address;
+      }
+    } else {
+      // Demo fallback when VITE_USERNAME_REGISTRY_ADDRESS is empty
+      if (recipient.startsWith('@') || (!recipient.startsWith('0x') && typeof resolveUsername === 'function' && resolveUsername(recipient))) {
+        const resolved = resolveUsername(recipient);
+        if (resolved) {
+          recipient = resolved;
+        } else {
+          showToast('Username not found in Arc registry');
+          return;
+        }
       }
     }
     if (!recipient) { showToast('Enter a recipient address or a username saved in this browser'); return; }
@@ -302,9 +318,20 @@ const TxManager = (() => {
     const status = 'pending';
     const due = document.getElementById('inv-due')?.value;
     const desc = document.getElementById('inv-desc')?.value;
-    const addr = document.getElementById('inv-addr')?.value?.trim() || WalletState.getAddr();
+    const typedUsername = document.getElementById('inv-username')?.value?.trim() || '';
+    let addr = document.getElementById('inv-addr')?.value?.trim() || WalletState.getAddr();
     const isEscrow = document.getElementById('inv-escrow-toggle')?.checked || false;
     if (!client || !number || !amount) { showToast('Fill in client, invoice # and amount'); return; }
+
+    if (isRegistryConfigured() && typedUsername) {
+      const res = await resolveNameOnChain(typedUsername);
+      if (!res.ok || !res.address) {
+        showToast('Name not registered');
+        return;
+      }
+      addr = res.address;
+    }
+
     _guards['invoice'] = true;
     const base = 'CREATE INVOICE';
     try {
@@ -385,12 +412,20 @@ const TxManager = (() => {
     if (!inv || inv.status === 'paid') return;
     const amount = parseFloat(inv.amount) || 0;
     if (amount <= 0) { showToast('Invalid invoice amount'); return; }
+    let recipient = inv.walletAddr || WalletState.getAddr();
+    if (isRegistryConfigured() && recipient && !/^0x[0-9a-fA-F]{40}$/.test(recipient)) {
+      const res = await resolveNameOnChain(recipient);
+      if (!res.ok || !res.address) {
+        showToast('Name not registered');
+        return;
+      }
+      recipient = res.address;
+    }
     if (WalletState.getTokenBal('USDC', 'ARC') < amount + 0.12) { showToast(`Insufficient USDC. Need ${(amount+0.12).toFixed(2)} USDC`); return; }
-    if (!(await confirmSendSummary({ token: 'USDC', amount, recipient: inv.walletAddr || WalletState.getAddr() }))) return;
+    if (!(await confirmSendSummary({ token: 'USDC', amount, recipient }))) return;
     try {
       showToast('Sign invoice payment in your wallet…');
       const provider = WalletManager.getProvider(); if (!provider) throw new Error("No wallet connected");
-      const recipient = inv.walletAddr || WalletState.getAddr();
 
       // Execute a real native USDC transaction
       const txHash = await _sendNativeTx(provider, recipient, amount);

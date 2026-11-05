@@ -2,6 +2,7 @@
 // Export writes a JSON file. Import checks the file first, asks before changing anything, and only ever
 // ADDS what is missing (see src/lib/backup.ts). Nothing already saved is overwritten or removed.
 import { buildBackup, parseBackup, planImport, MAX_BACKUP_BYTES } from '../lib/backup';
+import { USERNAME_REGISTRY_ADDRESS } from '../config/chain-config';
 
 const $ = (id) => document.getElementById(id);
 const readJson = (key, fallback) => { try { const v = JSON.parse(localStorage.getItem(key) || ''); return v ?? fallback; } catch { return fallback; } };
@@ -78,9 +79,10 @@ function build() {
   $('backup-export').addEventListener('click', exportBackup);
   $('backup-import').addEventListener('click', () => $('backup-file').click());
   $('backup-file').addEventListener('change', (e) => { importFile(e.target.files && e.target.files[0]); e.target.value = ''; });
-  // usernames are part of the same backup
+  // Only show the browser-only username backup note when VITE_USERNAME_REGISTRY_ADDRESS is empty
+  const registryConfigured = Boolean(USERNAME_REGISTRY_ADDRESS || (typeof window !== 'undefined' && window.__ARCLANCE_USERNAME_REGISTRY__));
   const tab = $('tab-username');
-  if (tab && !$('username-backup-note')) {
+  if (tab && !$('username-backup-note') && !registryConfigured) {
     const note = document.createElement('div');
     note.id = 'username-backup-note'; note.style.cssText = 'font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5';
     note.textContent = 'Usernames are stored only in this browser. They are included in the backup on the Invoices page.';

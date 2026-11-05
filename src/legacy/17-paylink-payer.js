@@ -1,8 +1,75 @@
 // Pay link payer view and recipient helpers
-// Ported verbatim from the original single-file index.html.
 import { publish } from './publish.js';
 import { parsePayPath } from './lib-paylink.js';
 import { ARC } from '../config/chain-config';
+import { isRegistryConfigured, resolveNameOnChain, formatShortAddr } from './16-rates-username.js';
+
+let sendResolveSeq = 0;
+
+function ensureSendResolveHint() {
+  let hint = document.getElementById('username-resolve-hint');
+  if (hint) return hint;
+  const input = document.getElementById('payRecipient');
+  const row = input && input.parentElement;
+  if (!row || !row.parentElement) return null;
+  hint = document.createElement('div');
+  hint.id = 'username-resolve-hint';
+  hint.setAttribute('role', 'status');
+  hint.style.cssText = 'display:none;font-size:12px;margin-top:6px;line-height:1.5';
+  row.insertAdjacentElement('afterend', hint);
+  return hint;
+}
+
+export async function onPayRecipientInput(val) {
+  const input = document.getElementById('payRecipient');
+  const raw = String(val !== undefined ? val : (input ? input.value : '')).trim();
+  const hint = ensureSendResolveHint();
+  const sendBtn = document.getElementById('sendPayBtn');
+  const modeRadio = document.querySelector('input[name="payRecipientType"]:checked');
+  const isUsernameMode = modeRadio ? modeRadio.value === 'username' : false;
+
+  if (!isRegistryConfigured()) {
+    if (hint) { hint.style.display = 'none'; hint.textContent = ''; }
+    if (sendBtn && !sendBtn.classList.contains('loading')) sendBtn.disabled = false;
+    return;
+  }
+
+  const looksLikeUsername = isUsernameMode || raw.startsWith('@') || (raw.length > 0 && !raw.startsWith('0x'));
+  if (!looksLikeUsername || !raw) {
+    if (hint) { hint.style.display = 'none'; hint.textContent = ''; }
+    if (sendBtn && !sendBtn.classList.contains('loading')) sendBtn.disabled = false;
+    return;
+  }
+
+  const clean = raw.replace(/^@/, '').trim().toLowerCase();
+  const seq = ++sendResolveSeq;
+  if (hint) {
+    hint.style.display = 'block';
+    hint.style.color = 'var(--text2)';
+    hint.textContent = `Resolving @${clean} on Arc Testnet…`;
+  }
+
+  const res = await resolveNameOnChain(clean);
+  if (seq !== sendResolveSeq) return;
+
+  if (res.ok && res.address) {
+    if (hint) {
+      hint.style.display = 'block';
+      hint.style.color = 'var(--green)';
+      hint.textContent = `✓ @${res.name} (${res.shortAddress})`;
+    }
+    if (sendBtn && !sendBtn.classList.contains('loading')) sendBtn.disabled = false;
+  } else {
+    if (hint) {
+      hint.style.display = 'block';
+      hint.style.color = 'var(--red)';
+      hint.textContent = 'Name not registered';
+    }
+    if (sendBtn) sendBtn.disabled = true;
+  }
+}
+window.onPayRecipientInput = onPayRecipientInput;
+
 // 5. Toggle Recipient inputs on Send
 function toggleRecipientType(type) {
   const label = document.getElementById('recipientLabel');
@@ -17,7 +84,16 @@ function toggleRecipientType(type) {
     input.placeholder = '0x742d35Cc6634C0532925a3b8...';
     input.classList.add('mono');
   }
+  onPayRecipientInput(input.value);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('payRecipient');
+  if (input && !input.dataset.usernameListenerAttached) {
+    input.dataset.usernameListenerAttached = '1';
+    input.addEventListener('input', () => onPayRecipientInput(input.value));
+  }
+});
 
 // 6. Live Currency Preview on Send page typing
 function updateSendLocalCurrency() {
@@ -36,12 +112,74 @@ function updateSendLocalCurrency() {
   el('pay-ngn', formatLocal(amt, ExchangeRates.NGN));
 }
 
-// 7. Hash routing for Pay Link payments arclance.io/pay/username/amount
-// 7. Hash routing for Pay Link payments arclance.io/pay/walletAddress/amount/service
-function handleHashPaymentRouting() {
+// 7. Routing for Pay Link and invoice links: /pay/<name-or-address>/<amount>/<service>
+async function handleHashPaymentRouting() {
   const link = parsePayPath(window.location.pathname, window.location.hash, window.location.search);
   if (!link) return;
-  // The target is a wallet address, or a username saved in this browser
+
+  if (isRegistryConfigured()) {
+    const isDirectAddress = /^0x[0-9a-fA-F]{40}$/.test(link.target);
+    if (!isDirectAddress) {
+      // Resolve username ONLY via the on-chain registry resolve() call on Arc Testnet RPC
+      const res = await resolveNameOnChain(link.target);
+      if (!res.ok || !res.address) {
+        setTimeout(() => {
+          openPayLinkPayerView('', link.amount || 0, link.label || 'Payment', res.name || link.target, {
+            blocked: true,
+            reason: 'Name not registered',
+          });
+          showToast('Name not registered');
+        }, 100);
+        return;
+      }
+      if (!(link.amount > 0)) {
+        setTimeout(() => showToast('This link has no amount. Ask the sender for a link with an amount.'), 100);
+        return;
+      }
+      setTimeout(() => {
+        openPayLinkPayerView(res.address, link.amount, link.label, res.name, {
+          onChain: true,
+          shortAddress: res.shortAddress,
+        });
+      }, 100);
+      return;
+    }
+
+    // Direct 0x address link when registry is configured: never resolve or trust ?u= without on-chain resolve()
+    if (link.name) {
+      const res = await resolveNameOnChain(link.name);
+      if (!res.ok || !res.address || res.address.toLowerCase() !== link.target.toLowerCase()) {
+        setTimeout(() => {
+          openPayLinkPayerView('', link.amount || 0, link.label || 'Payment', link.name, {
+            blocked: true,
+            reason: 'Name not registered',
+          });
+          showToast('Name not registered');
+        }, 100);
+        return;
+      }
+      if (!(link.amount > 0)) {
+        setTimeout(() => showToast('This link has no amount. Ask the sender for a link with an amount.'), 100);
+        return;
+      }
+      setTimeout(() => {
+        openPayLinkPayerView(res.address, link.amount, link.label, res.name, {
+          onChain: true,
+          shortAddress: res.shortAddress,
+        });
+      }, 100);
+      return;
+    }
+
+    if (!(link.amount > 0)) {
+      setTimeout(() => showToast('This link has no amount. Ask the sender for a link with an amount.'), 100);
+      return;
+    }
+    setTimeout(() => openPayLinkPayerView(link.target, link.amount, link.label, ''), 100);
+    return;
+  }
+
+  // Fallback demo behavior when VITE_USERNAME_REGISTRY_ADDRESS is empty
   let walletAddress = link.target;
   let displayName = link.name; // from ?u=: shown only, never used to find the recipient
   if (!/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
@@ -57,30 +195,52 @@ function handleHashPaymentRouting() {
 let currentPayLinkWalletAddress = '';
 let currentPayLinkAmount = 0;
 let currentPayLinkService = '';
+let currentPayLinkBlocked = false;
 
-function openPayLinkPayerView(walletAddress, amount, service, displayName) {
-  currentPayLinkWalletAddress = walletAddress;
-  currentPayLinkAmount = amount;
-  currentPayLinkService = service;
+function openPayLinkPayerView(walletAddress, amount, service, displayName, meta = {}) {
+  currentPayLinkBlocked = Boolean(meta && meta.blocked);
+  currentPayLinkWalletAddress = currentPayLinkBlocked ? '' : walletAddress;
+  currentPayLinkAmount = amount || 0;
+  currentPayLinkService = service || 'Freelance Services';
   
   const modal = document.getElementById('paylink-modal');
   if (!modal) return;
   
-  const shortAddr = walletAddress.length > 10 ? walletAddress.slice(0,6) + '...' + walletAddress.slice(-4) : walletAddress;
-  document.getElementById('pl-modal-user').textContent = shortAddr;
-  document.getElementById('pl-modal-amount').textContent = amount.toFixed(2) + ' USDC';
-  document.getElementById('pl-modal-service').textContent = 'for ' + service;
+  const shortAddr = walletAddress && walletAddress.length > 10 ? formatShortAddr(walletAddress) : walletAddress;
+  const userEl = document.getElementById('pl-modal-user');
+  if (userEl) {
+    if (currentPayLinkBlocked) {
+      userEl.textContent = displayName ? `@${String(displayName).replace(/^@/, '')} — Name not registered` : 'Name not registered';
+      userEl.style.color = 'var(--red)';
+    } else if (meta && meta.onChain && displayName) {
+      const cleanName = String(displayName).replace(/^@/, '');
+      userEl.textContent = `@${cleanName} (${shortAddr})`;
+      userEl.style.color = 'var(--text)';
+    } else {
+      userEl.textContent = shortAddr;
+      userEl.style.color = 'var(--text)';
+    }
+  }
+  document.getElementById('pl-modal-amount').textContent = Number(amount || 0).toFixed(2) + ' USDC';
+  document.getElementById('pl-modal-service').textContent = 'for ' + (service || 'Freelance Services');
   
   // Before anything is signed: the full recipient address and the network, in plain sight.
   const addrEl = document.getElementById('pl-modal-addr');
   if (addrEl) {
-    addrEl.textContent = walletAddress;
-    addrEl.style.cssText += ';color:var(--text);font-family:"JetBrains Mono",monospace;font-size:12px;word-break:break-all;line-height:1.5';
+    addrEl.textContent = currentPayLinkBlocked ? 'Name not registered' : walletAddress;
+    addrEl.style.cssText += ';color:' + (currentPayLinkBlocked ? 'var(--red)' : 'var(--text)') + ';font-family:"JetBrains Mono",monospace;font-size:12px;word-break:break-all;line-height:1.5';
     let info = document.getElementById('pl-modal-network');
     if (!info) { info = document.createElement('div'); info.id = 'pl-modal-network'; info.style.cssText = 'font-size:11px;color:var(--text2);margin-top:6px;line-height:1.6;text-align:center'; addrEl.insertAdjacentElement('afterend', info); }
     const safe = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-    info.innerHTML = `Recipient wallet (full address) above. Network: <strong style="color:var(--text)">${safe(ARC.name)}</strong> (chain ID ${ARC.chainId}). Check the address before you pay.` +
-      (displayName ? `<br>Name in the link: <strong style="color:var(--text)">${safe(displayName)}</strong> (a label only, not verified: the address above is what you pay).` : '');
+    if (currentPayLinkBlocked) {
+      info.innerHTML = `<span style="color:var(--red);font-weight:700">Name not registered</span> on ${safe(ARC.name)} (chain ID ${ARC.chainId}). Sending is blocked.`;
+    } else if (meta && meta.onChain && displayName) {
+      const cleanName = String(displayName).replace(/^@/, '');
+      info.innerHTML = `Resolved on-chain: <strong style="color:var(--text)">@${safe(cleanName)} (${safe(shortAddr)})</strong>.<br>Recipient wallet (full address) above. Network: <strong style="color:var(--text)">${safe(ARC.name)}</strong> (chain ID ${ARC.chainId}). Check the address before you pay.`;
+    } else {
+      info.innerHTML = `Recipient wallet (full address) above. Network: <strong style="color:var(--text)">${safe(ARC.name)}</strong> (chain ID ${ARC.chainId}). Check the address before you pay.` +
+        (displayName ? `<br>Name in the link: <strong style="color:var(--text)">${safe(displayName)}</strong> (a label only, not verified: the address above is what you pay).` : '');
+    }
   }
   
   // Calculate exchange rates
@@ -102,6 +262,13 @@ function closePayLinkPayerView() {
 function updatePayLinkModalActions() {
   const container = document.getElementById('pl-modal-actions');
   if (!container) return;
+
+  if (currentPayLinkBlocked) {
+    container.innerHTML = `<button class="tx-btn tx-btn-yellow" id="plModalPayBtn" disabled style="opacity:0.5;cursor:not-allowed">
+      <span id="plModalPayBtnContent">NAME NOT REGISTERED</span>
+    </button>`;
+    return;
+  }
   
   if (!WalletState.connected()) {
     container.innerHTML = `<button class="tx-btn tx-btn-yellow" onclick="WalletManager.openModal(); setTimeout(updatePayLinkModalActions, 1000);">CONNECT WALLET TO PAY</button>`;
@@ -113,10 +280,14 @@ function updatePayLinkModalActions() {
 }
 
 async function executePayLinkPayment() {
+  if (currentPayLinkBlocked) { showToast('Name not registered'); return; }
   if (!WalletState.connected()) { showToast('Connect wallet first'); return; }
   
   const recipient = currentPayLinkWalletAddress;
-  if (!recipient || recipient === 'your-wallet-address') { showToast(`Recipient address is invalid`); return; }
+  if (!recipient || recipient === 'your-wallet-address' || !/^0x[0-9a-fA-F]{40}$/.test(recipient)) {
+    showToast(isRegistryConfigured() ? 'Name not registered' : 'Recipient address is invalid');
+    return;
+  }
   
   const token = document.getElementById('pl-modal-token')?.value || 'USDC';
   const amount = currentPayLinkAmount;
@@ -178,4 +349,4 @@ async function executePayLinkPayment() {
 }
 
 
-publish({ toggleRecipientType, updateSendLocalCurrency, handleHashPaymentRouting, openPayLinkPayerView, closePayLinkPayerView, updatePayLinkModalActions, executePayLinkPayment });
+publish({ toggleRecipientType, onPayRecipientInput, updateSendLocalCurrency, handleHashPaymentRouting, openPayLinkPayerView, closePayLinkPayerView, updatePayLinkModalActions, executePayLinkPayment });

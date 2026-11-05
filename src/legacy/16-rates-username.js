@@ -1,11 +1,178 @@
 // Exchange rates and usernames
-// Ported verbatim from the original single-file index.html.
 import { publish } from './publish.js';
 import { buildPayLink } from './lib-paylink.js';
+import { ARC, USERNAME_REGISTRY_ADDRESS, arcAltTxUrl } from '../config/chain-config';
+import { USERNAME_REGISTRY_ABI } from '../contracts/username-registry-abi';
+import { readContract, encodeCall } from '../lib/contract';
+import { runArcTx } from './lib-tx.js';
+
 // Dynamic Exchange Rates cache updated live from CORS API
 // No built-in rates. Values come from a live source; until one loads they stay null and previews show a dash.
 const ExchangeRates = { PKR: null, INR: null, BDT: null, NGN: null };
 const RateStatus = { updatedAt: null, failed: false, loading: true };
+
+const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
+const RESERVED_NAMES = new Set(['arc', 'circle', 'usdc', 'eurc', 'admin', 'support', 'arclance']);
+
+let onChainMyUsername = '';
+let onChainLookupSeq = 0;
+
+export function getRegistryAddress() {
+  const override = typeof window !== 'undefined' ? window.__ARCLANCE_USERNAME_REGISTRY__ : '';
+  if (typeof override === 'string' && /^0x[0-9a-fA-F]{40}$/.test(override.trim())) {
+    return override.trim();
+  }
+  return USERNAME_REGISTRY_ADDRESS || '';
+}
+
+export function isRegistryConfigured() {
+  return Boolean(getRegistryAddress());
+}
+
+export function formatShortAddr(addr) {
+  if (!addr || typeof addr !== 'string' || addr.length < 10) return '';
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+export function validateRegistryName(raw) {
+  const name = String(raw ?? '').trim().replace(/^@/, '');
+  if (name.length < 3 || name.length > 20) {
+    return { ok: false, name, reason: 'Invalid username: length must be 3 to 20 characters.' };
+  }
+  if (name.startsWith('-') || name.endsWith('-')) {
+    return { ok: false, name, reason: 'Invalid username: cannot start or end with a hyphen.' };
+  }
+  if (!/^[a-z0-9-]+$/.test(name)) {
+    return { ok: false, name, reason: 'Invalid username: only lowercase a-z, digits 0-9, and hyphens (-) are allowed.' };
+  }
+  return { ok: true, name, reason: '' };
+}
+
+/**
+ * Resolve a username ONLY via the on-chain UsernameRegistry.resolve(name) view call on Arc Testnet RPC.
+ * Never reads from localStorage or ?u= display labels.
+ */
+export async function resolveNameOnChain(rawName) {
+  const regAddr = getRegistryAddress();
+  const clean = String(rawName ?? '').trim().replace(/^@/, '').toLowerCase();
+  if (!regAddr) {
+    return { ok: false, name: clean, address: null, shortAddress: '', reason: 'Username registry not configured' };
+  }
+  if (!validateRegistryName(clean).ok) {
+    return { ok: false, name: clean, address: null, shortAddress: '', reason: 'Name not registered' };
+  }
+  try {
+    const owner = await readContract(regAddr, USERNAME_REGISTRY_ABI, 'resolve', [clean]);
+    const addr = typeof owner === 'string' ? owner.trim() : '';
+    if (!/^0x[0-9a-fA-F]{40}$/.test(addr) || addr.toLowerCase() === ZERO_ADDR) {
+      return { ok: false, name: clean, address: null, shortAddress: '', reason: 'Name not registered' };
+    }
+    return { ok: true, name: clean, address: addr, shortAddress: formatShortAddr(addr), reason: '' };
+  } catch (err) {
+    return {
+      ok: false,
+      name: clean,
+      address: null,
+      shortAddress: '',
+      reason: 'Name not registered',
+      rpcError: true,
+      errorMessage: err?.message || String(err),
+    };
+  }
+}
+
+function decodeRegistryError(err, candidateName = '') {
+  const raw = String(err?.shortMessage || err?.message || err || '');
+  if (err?.code === 4001 || /user rejected|action_rejected/i.test(raw)) {
+    return 'Transaction rejected in wallet.';
+  }
+  if (/InvalidName/i.test(raw)) {
+    return 'Invalid username: use 3–20 lowercase letters (a-z), digits (0-9), or internal hyphens.';
+  }
+  if (/NameReserved/i.test(raw)) {
+    return `Username @${candidateName || 'name'} is reserved and cannot be registered.`;
+  }
+  if (/NameTaken/i.test(raw)) {
+    return `Username @${candidateName || 'name'} is already taken.`;
+  }
+  if (/AlreadyHasName/i.test(raw)) {
+    return 'This wallet already has a registered username. Release it first.';
+  }
+  if (/NoNameRegistered/i.test(raw)) {
+    return 'No username is currently registered to this wallet.';
+  }
+  return raw || 'Transaction failed on Arc Testnet.';
+}
+
+function setUsernameStatus(text, kind = 'info') {
+  const tab = document.getElementById('tab-username');
+  if (!tab) return;
+  let el = document.getElementById('username-reg-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'username-reg-status';
+    el.setAttribute('role', 'status');
+    el.style.cssText = 'display:none;font-size:12px;margin-bottom:12px;padding:8px 12px;border-radius:8px;line-height:1.5';
+    const regBtn = document.getElementById('regBtn');
+    if (regBtn && regBtn.parentElement === tab) {
+      tab.insertBefore(el, regBtn);
+    } else {
+      tab.appendChild(el);
+    }
+  }
+  if (!text) {
+    el.style.display = 'none';
+    el.textContent = '';
+    return;
+  }
+  el.style.display = 'block';
+  if (kind === 'error') {
+    el.style.background = 'rgba(239,68,68,0.1)';
+    el.style.border = '1px solid rgba(239,68,68,0.3)';
+    el.style.color = 'var(--red)';
+  } else if (kind === 'ok') {
+    el.style.background = 'rgba(0,230,118,0.1)';
+    el.style.border = '1px solid rgba(0,230,118,0.3)';
+    el.style.color = 'var(--green)';
+  } else {
+    el.style.background = 'rgba(245,197,24,0.08)';
+    el.style.border = '1px solid rgba(245,197,24,0.25)';
+    el.style.color = 'var(--yellow)';
+  }
+  el.textContent = text;
+}
+
+function syncUsernameTabCopy() {
+  const tab = document.getElementById('tab-username');
+  if (!tab) return;
+  const configured = isRegistryConfigured();
+  const backupNote = document.getElementById('username-backup-note');
+  if (configured) {
+    if (backupNote) backupNote.style.display = 'none';
+    const intro = document.getElementById('username-tab-intro') || tab.querySelector('div');
+    if (intro && intro.id !== 'username-backup-note' && !intro.classList.contains('form-group')) {
+      intro.id = 'username-tab-intro';
+      intro.textContent = 'Register an on-chain @username on Arc Testnet so clients can pay you with a short name instead of a 42-character wallet address. Names are first-come-first-served (one per wallet) and can be released by the owner at any time.';
+    }
+    const infoBox = tab.querySelector('.info-box');
+    if (infoBox) {
+      infoBox.innerHTML = `
+        <div class="info-row"><span class="k">Registration fee</span><span class="v green">Free (no protocol fee)</span></div>
+        <div class="info-row"><span class="k">Gas fee</span><span class="v green">Paid in USDC on Arc Testnet</span></div>
+        <div class="info-row"><span class="k">Recorded on</span><span class="v yellow">Arc Testnet (${formatShortAddr(getRegistryAddress())})</span></div>
+      `;
+    }
+    const cnt = document.getElementById('regBtnContent');
+    const btn = document.getElementById('regBtn');
+    if (cnt && btn && !btn.disabled && cnt.textContent === 'SAVE USERNAME') {
+      cnt.textContent = 'REGISTER USERNAME';
+    }
+    const linkNotePaylink = document.querySelector('[data-insert-id="link-note-paylink"]');
+    if (linkNotePaylink) linkNotePaylink.style.display = 'none';
+  } else {
+    if (backupNote) backupNote.style.display = '';
+  }
+}
 
 // Helper: fetch with automatic retry and boolean flag cancellation (Requirement 7)
 // Remove AbortSignal from payloads as it cannot be cloned across postMessage and crashes workers/iframes.
@@ -78,9 +245,10 @@ async function fetchLiveExchangeRates() {
   }
 }
 
-// 2. Resolve Usernames
+// 2. Resolve Usernames (demo fallback when VITE_USERNAME_REGISTRY_ADDRESS is empty)
 function resolveUsername(username) {
   if (!username) return null;
+  if (isRegistryConfigured()) return null;
   const clean = username.replace('@', '').trim().toLowerCase();
   
   // Local storage custom usernames registry
@@ -97,9 +265,87 @@ function resolveUsername(username) {
   return defaults[clean] || null;
 }
 
-// 3. Register Username on-chain
+// 3. Register Username (on-chain when VITE_USERNAME_REGISTRY_ADDRESS is set; browser demo fallback when empty)
 async function registerUsernameOnChain(username) {
+  syncUsernameTabCopy();
   if (!WalletState.connected()) { showToast('Connect your wallet first'); return; }
+
+  const regAddr = getRegistryAddress();
+  if (regAddr) {
+    const rawInput = username !== undefined ? username : document.getElementById('reg-username')?.value;
+    const check = validateRegistryName(rawInput);
+    if (!check.ok) {
+      setUsernameStatus(check.reason, 'error');
+      showToast(check.reason);
+      return;
+    }
+    const clean = check.name;
+    if (RESERVED_NAMES.has(clean)) {
+      const msg = `Username @${clean} is reserved and cannot be registered.`;
+      setUsernameStatus(msg, 'error');
+      showToast(msg);
+      return;
+    }
+
+    const btn = document.getElementById('regBtn');
+    const cnt = document.getElementById('regBtnContent');
+    const myAddr = WalletState.getAddr();
+
+    try {
+      if (btn && cnt) { btn.disabled = true; cnt.innerHTML = '<div class="spinner"></div> Checking…'; }
+      setUsernameStatus(`Checking @${clean} on Arc Testnet…`, 'info');
+
+      const [reservedOnChain, existingOwner, currentWalletName] = await Promise.all([
+        readContract(regAddr, USERNAME_REGISTRY_ABI, 'isReserved', [clean]).catch(() => false),
+        readContract(regAddr, USERNAME_REGISTRY_ABI, 'resolve', [clean]),
+        readContract(regAddr, USERNAME_REGISTRY_ABI, 'nameOf', [myAddr]),
+      ]);
+
+      if (reservedOnChain) {
+        const msg = `Username @${clean} is reserved and cannot be registered.`;
+        setUsernameStatus(msg, 'error');
+        showToast(msg);
+        return;
+      }
+      if (typeof existingOwner === 'string' && existingOwner.toLowerCase() !== ZERO_ADDR) {
+        const msg = existingOwner.toLowerCase() === String(myAddr).toLowerCase()
+          ? `You already own @${clean} (${formatShortAddr(existingOwner)}).`
+          : `Username @${clean} is already taken by ${formatShortAddr(existingOwner)}.`;
+        setUsernameStatus(msg, 'error');
+        showToast(msg);
+        return;
+      }
+      if (typeof currentWalletName === 'string' && currentWalletName.length > 0) {
+        const msg = `This wallet already owns @${currentWalletName}. Release it first before registering another username.`;
+        setUsernameStatus(msg, 'error');
+        showToast(msg);
+        return;
+      }
+
+      const data = encodeCall(USERNAME_REGISTRY_ABI, 'register', [clean]);
+      const txHash = await runArcTx(regAddr, data, (st) => {
+        if (cnt) cnt.innerHTML = `<div class="spinner"></div> ${st}`;
+        setUsernameStatus(st, 'info');
+      });
+
+      onChainMyUsername = clean;
+      const inputEl = document.getElementById('reg-username');
+      if (inputEl) inputEl.value = '';
+      setUsernameStatus(`✓ @${clean} (${formatShortAddr(myAddr)}) is now registered on Arc Testnet.`, 'ok');
+      showToast(`Username @${clean} recorded on Arc Testnet`, { url: arcAltTxUrl(txHash), label: 'View on Arcscan' });
+      await updateUsernameUI();
+      WalletState.triggerChainSync(txHash);
+    } catch (err) {
+      const msg = decodeRegistryError(err, clean);
+      setUsernameStatus(msg, 'error');
+      showToast('Username registration failed: ' + msg);
+    } finally {
+      if (btn && cnt) { btn.disabled = false; cnt.textContent = 'REGISTER USERNAME'; }
+    }
+    return;
+  }
+
+  // Fallback demo behavior when VITE_USERNAME_REGISTRY_ADDRESS is empty
   const clean = username.replace('@', '').trim().replace(/\s+/g,'-').toLowerCase();
   if (clean.length < 3) { showToast('Username must be at least 3 characters'); return; }
   
@@ -110,7 +356,6 @@ async function registerUsernameOnChain(username) {
   const provider = WalletManager.getProvider();
   if (!provider) return;
   
-  const base = 'REGISTER USERNAME';
   const btn = document.getElementById('regBtn');
   const cnt = document.getElementById('regBtnContent');
   
@@ -144,11 +389,110 @@ async function registerUsernameOnChain(username) {
   }
 }
 
+async function releaseUsernameOnChain() {
+  const regAddr = getRegistryAddress();
+  if (!regAddr) return;
+  if (!WalletState.connected()) { showToast('Connect your wallet first'); return; }
+
+  const btn = document.getElementById('releaseUsernameBtn');
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = 'Releasing…'; }
+    setUsernameStatus('Confirm release transaction in your wallet…', 'info');
+    const data = encodeCall(USERNAME_REGISTRY_ABI, 'release', []);
+    const txHash = await runArcTx(regAddr, data, (st) => {
+      setUsernameStatus(st, 'info');
+    });
+    const prev = onChainMyUsername;
+    onChainMyUsername = '';
+    setUsernameStatus(`✓ Released ${prev ? '@' + prev : 'username'} on Arc Testnet.`, 'ok');
+    showToast('Username released on Arc Testnet', { url: arcAltTxUrl(txHash), label: 'View on Arcscan' });
+    await updateUsernameUI();
+    WalletState.triggerChainSync(txHash);
+  } catch (err) {
+    const msg = decodeRegistryError(err);
+    setUsernameStatus(msg, 'error');
+    showToast('Release failed: ' + msg);
+    if (btn) { btn.disabled = false; btn.textContent = 'Release Username'; }
+  }
+}
+window.releaseUsernameOnChain = releaseUsernameOnChain;
+
 // 4. Update Username UI Displays (Feature 16)
-function updateUsernameUI() {
-  const myUser = localStorage.getItem('arclance_my_username');
-  const valEl = document.getElementById('my-username-value');
+async function updateUsernameUI() {
+  syncUsernameTabCopy();
   const displayBox = document.getElementById('my-username-display');
+  const valEl = document.getElementById('my-username-value');
+
+  if (isRegistryConfigured()) {
+    const regAddr = getRegistryAddress();
+    const myAddr = (typeof WalletState !== 'undefined' && WalletState.getAddr()) || '';
+    if (!myAddr) {
+      onChainMyUsername = '';
+      if (displayBox) {
+        delete displayBox.dataset.link;
+        displayBox.innerHTML = `
+          <span style="font-size:12px;color:var(--text2)">Your Registered Username:</span>
+          <div style="font-size:18px;font-weight:800;color:var(--text3);margin-top:4px" id="my-username-value">Connect wallet to view</div>
+        `;
+      }
+      return;
+    }
+
+    const seq = ++onChainLookupSeq;
+    try {
+      const chainName = await readContract(regAddr, USERNAME_REGISTRY_ABI, 'nameOf', [myAddr]);
+      if (seq !== onChainLookupSeq) return;
+      const myUser = typeof chainName === 'string' ? chainName.trim() : '';
+      onChainMyUsername = myUser;
+
+      if (myUser && displayBox) {
+        const payUrl = buildPayLink(myUser);
+        const shortMe = formatShortAddr(myAddr);
+        displayBox.dataset.link = `${payUrl}|${myAddr}`;
+        displayBox.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:12px;color:var(--text2)">Your Registered Username:</span>
+            <span class="badge badge-green" style="font-size:10px">On-Chain · Arc Testnet</span>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:var(--green);font-family:'Syne',sans-serif" id="my-username-value">@${myUser} <span style="font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--text2);font-weight:600">(${shortMe})</span></div>
+
+          <div style="margin-top:14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:left">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:4px">SHAREABLE PAY LINK</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--yellow);word-break:break-all" id="shareablePayLink">${payUrl}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5">Resolves on-chain to <span style="font-family:'JetBrains Mono',monospace;color:var(--text)">${shortMe}</span> on Arc Testnet.</div>
+            <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-sm btn-ghost" onclick="copyShareablePayLink('${payUrl}')" style="font-size:11px;padding:6px 12px;border-radius:8px;color:var(--yellow);border-color:rgba(245,197,24,0.3);cursor:pointer">Copy Pay Link</button>
+              <button class="btn btn-sm btn-ghost" onclick="toggleUsernameQR('${payUrl}', '${myUser}')" style="font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer">Show QR Code</button>
+              <button class="btn btn-sm btn-ghost" id="releaseUsernameBtn" onclick="releaseUsernameOnChain()" style="font-size:11px;padding:6px 12px;border-radius:8px;color:var(--red);border-color:rgba(239,68,68,0.35);cursor:pointer">Release Username</button>
+            </div>
+            <div id="usernameQrContainer" style="display:none;margin-top:14px;text-align:center;padding:16px;background:#ffffff;border-radius:10px">
+              <div id="usernameQrSvg" style="display:flex;justify-content:center"></div>
+              <div style="font-size:11px;color:#111;margin-top:8px;font-weight:700">Scan to pay @${myUser} (${shortMe}) on Arc</div>
+            </div>
+          </div>
+        `;
+      } else if (displayBox) {
+        delete displayBox.dataset.link;
+        displayBox.innerHTML = `
+          <span style="font-size:12px;color:var(--text2)">Your Registered Username:</span>
+          <div style="font-size:18px;font-weight:800;color:var(--text3);margin-top:4px" id="my-username-value">No username yet</div>
+        `;
+      }
+    } catch (err) {
+      if (seq !== onChainLookupSeq) return;
+      if (displayBox) {
+        delete displayBox.dataset.link;
+        displayBox.innerHTML = `
+          <span style="font-size:12px;color:var(--text2)">Your Registered Username:</span>
+          <div style="font-size:14px;font-weight:700;color:var(--red);margin-top:4px" id="my-username-value">Could not read from Arc Testnet RPC</div>
+        `;
+      }
+    }
+    return;
+  }
+
+  // Demo fallback when VITE_USERNAME_REGISTRY_ADDRESS is empty
+  const myUser = localStorage.getItem('arclance_my_username');
   // The first render replaces the element that held #my-username-value, so do not depend on it for later renders.
   if (valEl || displayBox) {
     if (myUser) {
@@ -256,4 +600,18 @@ window.toggleUsernameQR = function(url, user) {
 };
 
 
-publish({ RateStatus, ExchangeRates, fetchWithRetry, fetchLiveExchangeRates, resolveUsername, registerUsernameOnChain, updateUsernameUI });
+publish({
+  RateStatus,
+  ExchangeRates,
+  fetchWithRetry,
+  fetchLiveExchangeRates,
+  resolveUsername,
+  resolveNameOnChain,
+  getRegistryAddress,
+  isRegistryConfigured,
+  formatShortAddr,
+  validateRegistryName,
+  registerUsernameOnChain,
+  releaseUsernameOnChain,
+  updateUsernameUI,
+});

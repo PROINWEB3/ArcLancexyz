@@ -857,8 +857,8 @@
           <div class="card animate">
             <div class="section-title" style="margin-bottom:18px">Customize Your Link</div>
             <div class="form-group">
-              <label class="form-label">Your Wallet Address</label>
-              <input class="form-input" id="pl-wallet" type="text" placeholder="Connect wallet to auto-fill" readonly>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px"><label class="form-label" style="margin:0">Your Wallet Address</label><button type="button" class="btn btn-ghost btn-sm" id="pl-use-wallet-btn" onclick="useMyWalletForPayLink()" style="padding:3px 10px;font-size:11px">Use my wallet</button></div>
+              <input class="form-input" id="pl-wallet" type="text" placeholder="0x... or @username" oninput="onPlWalletInput(this.value)" style="user-select:text;-webkit-user-select:text"><div id="pl-wallet-resolve" role="status" style="display:none;font-size:12px;margin-top:6px;line-height:1.5"></div>
               <div style="font-size:12px;color:var(--text2);margin-top:6px;word-break:break-all">https://arclance.xyz/pay/<strong id="pl-wallet-preview" style="color:var(--green)">your-wallet-address</strong></div>
             </div>
             <div class="form-group">
@@ -875,7 +875,7 @@
               <span style="font-size:12px">🇮🇳 <span style="color:var(--green);font-weight:700" id="pl-inr">—</span> INR</span>
               <span style="font-size:12px">🇧🇩 <span style="color:var(--teal);font-weight:700" id="pl-bdt">—</span> BDT</span>
             </div>
-            <button class="tx-btn tx-btn-yellow" onclick="copyMainPayLink()"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> COPY PAYMENT LINK</button>
+            <button class="tx-btn tx-btn-yellow" id="pl-copy-btn" onclick="copyMainPayLink()"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> COPY PAYMENT LINK</button>
           </div>
 
           <!-- PREVIEW CLIENT VIEW -->
@@ -1368,11 +1368,11 @@
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px">
                   <div style="font-size:13px;font-weight:700;margin-bottom:8px">Registration</div>
-                  <div style="font-size:13px;color:var(--text2);line-height:1.8">Payments → Username tab → type your desired @username → click Save. Demo feature: the name is saved in this browser only, so it only resolves on this device. No fee is charged.</div>
+                  <div style="font-size:13px;color:var(--text2);line-height:1.8">Go to <strong style="color:var(--text)">Payments → Username tab</strong>, enter a 3–20 character name (lowercase <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">a-z</code>, digits <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">0-9</code>, internal hyphens), and confirm the <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">register(name)</code> transaction in your wallet. Names are <strong style="color:var(--text)">first-come-first-served</strong> (one per wallet, releasable anytime with <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">release()</code>) and <strong style="color:var(--yellow)">testnet-only for now</strong> on Arc Testnet. No protocol fee is charged (only Arc Testnet gas in USDC).</div>
                 </div>
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px">
                   <div style="font-size:13px;font-weight:700;margin-bottom:8px">Using a Username</div>
-                  <div style="font-size:13px;color:var(--text2);line-height:1.8">In the Send form, switch recipient mode to <strong style="color:var(--text)">Username</strong> and type @username. The platform resolves it to the correct wallet address automatically.</div>
+                  <div style="font-size:13px;color:var(--text2);line-height:1.8">In the Send form (<strong style="color:var(--text)">@Username</strong> mode), Pay Links (<code style="background:var(--bg3);padding:1px 5px;border-radius:4px">/pay/&lt;name&gt;/...</code>), and invoice links, ArcLance queries <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">UsernameRegistry.resolve(name)</code> on the Arc Testnet RPC and always shows the resolved short address (<code style="background:var(--bg3);padding:1px 5px;border-radius:4px">0x1234...5678</code>) next to the name so the payer can verify it. Unregistered names show <em>Name not registered</em> and block sending.</div>
                 </div>
               </div>
             </div>
@@ -1505,6 +1505,7 @@
               <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">Swap vs Bridge — what's the difference?</div><div style="font-size:13px;color:var(--text2);line-height:1.7"><strong style="color:var(--text)">Swap</strong> = exchange token A for token B on the same chain (USDC → EURC on Arc). <strong style="color:var(--text)">Bridge</strong> = move token across chains (USDC from Arc → Ethereum).</div></div>
               <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">Can ArcLance freeze my funds?</div><div style="font-size:13px;color:var(--text2);line-height:1.7">ArcLance never holds your funds and cannot freeze them. USDC itself is issued by Circle, which can blacklist addresses under its own policies.</div></div>
               <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">Is my wallet address public?</div><div style="font-size:13px;color:var(--text2);line-height:1.7">Yes — all blockchain transactions are publicly viewable on the block explorer (testnet.arcscan.app). This is normal for blockchains. Your name is not attached to your address unless you voluntarily share both.</div></div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">How does the on-chain @username registry work?</div><div style="font-size:13px;color:var(--text2);line-height:1.7">Usernames are recorded on-chain in the <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">UsernameRegistry</code> contract on Arc Testnet (testnet-only for now). Registration is <strong style="color:var(--text)">first-come-first-served</strong> with one name per wallet (3–20 lowercase letters, digits, or internal hyphens; reserved protocol names cannot be claimed), and the owner can call <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">release()</code> at any time. The Send form, Pay Links, and invoice links resolve names on-chain via <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">resolve(name)</code> and display the resolved short address next to the name so payers can verify it before sending.</div></div>
             </div>
           </div>
 

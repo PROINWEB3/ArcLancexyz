@@ -5,6 +5,7 @@ import { uiIcon, stripPictographs } from '../assets/ui-icons';
 import { buildPayLink } from './lib-paylink.js';
 import { ARC } from '../config/chain-config';
 import { formatDue } from '../lib/invoice-due';
+import { isRegistryConfigured, resolveNameOnChain, formatShortAddr } from './16-rates-username.js';
 /* ══════════════════════════════════════
    TOAST
 ══════════════════════════════════════ */
@@ -100,21 +101,89 @@ function updateInvLocalCurrency() {
 /* ══════════════════════════════════════
    PAYMENT LINK
 ══════════════════════════════════════ */
+let invPreviewSeq = 0;
+
+function ensureInvoiceResolveEl() {
+  let el = document.getElementById('inv-username-resolve');
+  if (el) return el;
+  const linkEl = document.getElementById('inv-link-text');
+  if (!linkEl || !linkEl.parentElement) return null;
+  el = document.createElement('div');
+  el.id = 'inv-username-resolve';
+  el.setAttribute('role', 'status');
+  el.style.cssText = 'display:none;font-size:12px;margin-top:6px;line-height:1.5';
+  linkEl.insertAdjacentElement('afterend', el);
+  return el;
+}
+
 function updatePayLinkPreview() {
-  const typed = (document.getElementById('inv-username')?.value?.trim() || '').replace(/\s+/g,'-').toLowerCase();
-  // The link pays the wallet address (it opens on any device). The username is only a display label (?u=).
+  const rawTyped = document.getElementById('inv-username')?.value?.trim() || '';
+  const typed = rawTyped.replace(/\s+/g,'-').toLowerCase();
   const entered = document.getElementById('inv-addr')?.value?.trim() || '';
   const address = /^0x[0-9a-fA-F]{40}$/.test(entered) ? entered : (typeof WalletState !== 'undefined' && WalletState.getAddr()) || '';
   const inv = document.getElementById('inv-number')?.value?.trim() || 'INV-001';
   const amt = document.getElementById('inv-amount')?.value?.trim() || '';
-  const link = buildPayLink(address, amt, inv, typed);
   const el = document.getElementById('inv-link-text');
-  if(el) el.textContent = link;
+
+  if (!isRegistryConfigured()) {
+    // Demo fallback when VITE_USERNAME_REGISTRY_ADDRESS is empty:
+    // The link pays the wallet address (it opens on any device). The username is only a display label (?u=).
+    const link = buildPayLink(address, amt, inv, typed);
+    if (el) el.textContent = link;
+    return;
+  }
+
+  const linkNote = document.querySelector('[data-insert-id="link-note-invoice"]');
+  if (linkNote) linkNote.style.display = 'none';
+  const resolveEl = ensureInvoiceResolveEl();
+  const invBtn = document.getElementById('invBtn');
+
+  if (!rawTyped) {
+    if (resolveEl) { resolveEl.style.display = 'none'; resolveEl.textContent = ''; }
+    if (invBtn && !invBtn.classList.contains('loading')) invBtn.disabled = false;
+    const link = buildPayLink(address, amt, inv);
+    if (el) el.textContent = link;
+    return;
+  }
+
+  const clean = rawTyped.replace(/^@/, '').toLowerCase();
+  const seq = ++invPreviewSeq;
+  if (resolveEl) {
+    resolveEl.style.display = 'block';
+    resolveEl.style.color = 'var(--text2)';
+    resolveEl.textContent = `Resolving @${clean} on Arc Testnet…`;
+  }
+
+  resolveNameOnChain(clean).then((res) => {
+    if (seq !== invPreviewSeq) return;
+    if (res.ok && res.address) {
+      if (resolveEl) {
+        resolveEl.style.display = 'block';
+        resolveEl.style.color = 'var(--green)';
+        resolveEl.textContent = `✓ @${res.name} (${res.shortAddress})`;
+      }
+      if (el) el.textContent = buildPayLink(res.name, amt, inv);
+      const addrInput = document.getElementById('inv-addr');
+      if (addrInput && !addrInput.value) addrInput.value = res.address;
+      if (invBtn && !invBtn.classList.contains('loading')) invBtn.disabled = false;
+    } else {
+      if (resolveEl) {
+        resolveEl.style.display = 'block';
+        resolveEl.style.color = 'var(--red)';
+        resolveEl.textContent = 'Name not registered';
+      }
+      if (el) el.textContent = 'Name not registered';
+      if (invBtn) invBtn.disabled = true;
+    }
+  });
 }
 
 function copyPayLink() {
   const text = document.getElementById('inv-link-text')?.textContent;
-  if (!text) return;
+  if (!text || text === 'Name not registered') {
+    showToast('Name not registered');
+    return;
+  }
   navigator.clipboard.writeText(text).then(()=>showToast('Payment link copied!')).catch(()=>showToast('Copy failed'));
 }
 
@@ -126,6 +195,10 @@ function shareViaWhatsApp() {
   const desc = document.getElementById('inv-desc')?.value?.trim() || 'Services';
   const due = document.getElementById('inv-due')?.value || '';
   const link = document.getElementById('inv-link-text')?.textContent || '';
+  if (link === 'Name not registered') {
+    showToast('Name not registered');
+    return;
+  }
   
   let msgText = `Hi ${client},\n\nThis is ${yourName}. Please find the invoice details below:\n\nInvoice #: ${invNumber}\nService: ${desc}\nAmount: ${amount} USDC`;
   if (due) {
