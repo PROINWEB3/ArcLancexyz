@@ -155,11 +155,15 @@
           <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(245,197,24,0.07),transparent 60%),radial-gradient(ellipse at 10% 50%,rgba(108,63,196,0.05),transparent 50%);pointer-events:none"></div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
             <div>
-              <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--yellow);margin-bottom:8px;display:flex;align-items:center;gap:8px">GLOBAL FREELANCER PAYMENTS</div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--yellow);margin-bottom:8px;display:flex;align-items:center;gap:8px">FREELANCER PAYMENTS</div>
               <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1.25;margin-bottom:6px">Get paid in USDC.<br><span style="color:var(--yellow)">Settled in seconds.</span></div>
-              <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-                <div style="font-size:15px;color:var(--text2)">A payment page for freelancers who can't use PayPal or Payoneer. Works in any country where you can hold a wallet.</div>
-                <div style="font-size:18px;font-weight:800;color:var(--yellow)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Built on Arc Network</div>
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+                <div style="font-size:15px;color:var(--text2)">Fast payouts, low fees, and no bank or KYC friction. If you have a wallet, you can get paid.</div>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px">
+                  <button class="btn btn-primary" onclick="navigate('payments',document.querySelectorAll('.nav-item')[1])">Get started</button>
+                  <button class="btn btn-ghost" onclick="navigate('docs',document.querySelectorAll('.nav-item')[10])">Learn more</button>
+                  <span style="font-size:13px;font-weight:600;color:var(--yellow);display:inline-flex;align-items:center;gap:6px;margin-left:4px"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Built on Arc Network</span>
+                </div>
               </div>
             </div>
           </div>
@@ -202,7 +206,7 @@
               <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 20%,rgba(245,197,24,0.07),transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(108,63,196,0.05),transparent 60%);pointer-events:none"></div>
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
                 <div>
-                  <div class="stat-label">Total Wallet Balance</div>
+                  <div class="stat-label">Balance</div>
                   <div style="font-family:'Syne',sans-serif;font-size:44px;font-weight:800;background:linear-gradient(135deg,var(--yellow),var(--yellow2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text" id="portfolio-amount">$0.00</div>
                   <div style="font-size:13px;color:var(--text2);margin-top:5px" id="portfolio-sub">Connect wallet to view balances</div>
                   <!-- LOCAL CURRENCY DISPLAY -->
@@ -239,8 +243,8 @@
               <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 85% 15%,rgba(59,130,246,0.08),transparent 60%),radial-gradient(ellipse at 15% 85%,rgba(168,85,247,0.05),transparent 60%);pointer-events:none"></div>
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
                 <div>
-                  <div class="section-label-sm" style="color:#60a5fa;margin-bottom:4px">BALANCES ON OTHER NETWORKS</div>
-                  <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text)">Multi-Chain Balance</div>
+                  <div class="section-label-sm" style="color:#60a5fa;margin-bottom:4px">NETWORKS</div>
+                  <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text)">Other Networks</div>
                 </div>
                 <div style="display:flex;gap:6px;flex-wrap:wrap">
                   <span class="badge badge-purple" style="background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3)">Read-only</span>
@@ -257,21 +261,21 @@
                     <span><span style="display:inline-flex;width:18px;height:18px;border-radius:50%;overflow:hidden;vertical-align:-4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="web3icons"><path fill="url(#arc__a)" d="M3.5 20.999c.146-4.407.893-8.519 2.142-11.717C7.223 5.231 9.513 3 12.088 3s4.865 2.231 6.447 6.283c.822 2.107 1.427 4.61 1.786 7.334q.048.366.087.737.015.024.013.041s.21 1.317.256 3.604h-.024c-.313-.256-4-3.153-10.112-2.314.093-1.035.22-2.04.383-3.005l.027-.146a24.5 24.5 0 0 1 6.104.57q-.007-.056-.017-.115c-.33-2.06-.819-3.945-1.448-5.556-1.029-2.635-2.371-4.271-3.502-4.271-1.132 0-2.474 1.636-3.503 4.271q-.375.958-.679 2.034a30 30 0 0 0-.718 3.213A40 40 0 0 0 6.662 21H3.5z"></path><defs><linearGradient id="arc__a" x1="12.088" x2="12.088" y1="3" y2="21" gradientUnits="userSpaceOnUse"><stop stop-color="#182680"></stop><stop offset="1" stop-color="#842D56"></stop></linearGradient></defs></svg></span></span> Arc Testnet
                   </div>
                   <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--yellow);margin-top:4px" id="gateway-bal-arc">0.00 USDC</div>
-                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Primary Gas & Asset</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Primary gas & asset</div>
                 </div>
                 <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px">
                   <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
                     <span><span style="display:inline-flex;width:18px;height:18px;border-radius:50%;overflow:hidden;vertical-align:-4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="web3icons"><path fill="#8FFCF3" d="M12 3v6.651l5.625 2.516z"></path><path fill="#CABCF8" d="m12 3-5.625 9.166L12 9.653z"></path><path fill="#CBA7F5" d="M12 16.478V21l5.625-7.784z"></path><path fill="#74A0F3" d="M12 21v-4.522l-5.625-3.262z"></path><path fill="#CBA7F5" d="m12 15.43 5.625-3.263L12 9.652z"></path><path fill="#74A0F3" d="M6.375 12.167 12 15.43V9.652z"></path><path fill="#202699" d="m12 15.43-5.625-3.263L12 3l5.624 9.166zm-5.252-3.528 5.161-8.41v6.114zm-.077.229 5.238-2.327v5.364zm5.418-2.327v5.364l5.234-3.037zm0-.198 5.161 2.296-5.161-8.41z" fill-rule="evenodd" clip-rule="evenodd"></path><path fill="#202699" d="m12 16.406-5.625-3.195L12 21l5.624-7.79zm-4.995-2.633 4.904 2.79v4.005zm5.084 2.79v4.005l4.905-6.795z" fill-rule="evenodd" clip-rule="evenodd"></path></svg></span></span> Ethereum Sepolia
                   </div>
                   <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#93c5fd;margin-top:4px" id="gateway-bal-eth">0.00 USDC</div>
-                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Read from the chain</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Read from chain</div>
                 </div>
                 <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px">
                   <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px">
                     <span><span style="display:inline-flex;width:18px;height:18px;border-radius:50%;overflow:hidden;vertical-align:-4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="web3icons"><path fill="#00F" d="M3 4.706c0-.585 0-.877.11-1.101.106-.215.28-.39.496-.495C3.83 3 4.122 3 4.706 3h14.588c.585 0 .876 0 1.101.11.215.105.389.28.494.495.111.225.111.517.111 1.101v14.588c0 .585 0 .876-.11 1.101-.106.215-.28.389-.495.494-.225.111-.517.111-1.101.111H4.706c-.585 0-.876 0-1.101-.11a1.08 1.08 0 0 1-.494-.495C3 20.17 3 19.878 3 19.294z"></path></svg></span></span> Base Sepolia
                   </div>
                   <div style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#60a5fa;margin-top:4px" id="gateway-bal-base">0.00 USDC</div>
-                  <div style="font-size:10px;color:var(--text3);margin-top:2px">OP Stack L2 Route</div>
+                  <div style="font-size:10px;color:var(--text3);margin-top:2px">Layer 2 route</div>
                 </div>
               </div>
 
@@ -280,18 +284,22 @@
                   <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px">Combined Multi-Chain USDC</div>
                   <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#60a5fa" id="gateway-unified-total">$0.00 USDC</div>
                 </div>
+                <button class="btn btn-sm btn-ghost" onclick="navigate('bridge',document.querySelectorAll('.nav-item')[3])">Open Bridge</button>
               </div>
             </div>
 
             <div class="card animate">
-              <div class="section-header"><div class="section-title">My Assets</div></div>
-              <div id="assets-list"><div style="text-align:center;color:var(--text2);font-size:13px;padding:32px 0">Connect wallet to view assets</div></div>
+              <div class="section-header" style="display:flex;justify-content:space-between;align-items:center">
+                <div class="section-title">Assets</div>
+                <button class="btn btn-sm btn-ghost" onclick="navigate('payments',document.querySelectorAll('.nav-item')[1])">See all</button>
+              </div>
+              <div id="assets-list"><div style="text-align:center;color:var(--text2);font-size:13px;padding:32px 0">Connect your wallet to see your assets</div></div>
             </div>
 
             <div class="card animate">
-              <div class="section-label-sm">GLOBAL COVERAGE</div>
+              <div class="section-label-sm">GLOBAL ACCESS</div>
               <div class="section-header" style="margin-bottom:14px">
-                <div class="section-title">Open to any country with a wallet</div>
+                <div class="section-title">Worldwide Coverage</div>
                 <span class="badge badge-green">Active</span>
               </div>
               <div class="countries-grid" id="countries-grid"></div>
@@ -299,8 +307,8 @@
               <div style="margin-top:20px;padding:16px;background:rgba(255,255,255,0.015);border:1px dashed rgba(255,255,255,0.08);border-radius:12px;display:flex;align-items:center;gap:14px;justify-content:center">
                 <span style="font-size:28px"><svg class="ui-i ui-i-feature" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
                 <div style="text-align:left">
-                  <h4 style="font-size:14px;font-weight:700;color:var(--text);margin:0">Rest of the World & Global Freelancers</h4>
-                  <p style="font-size:12px;color:var(--text2);margin:4px 0 0">Not listed? ArcLance has no country allowlist. If you can use a wallet, you can receive USDC and EURC. Cashing out to local money depends on the rules in your country.</p>
+                  <h4 style="font-size:14px;font-weight:700;color:var(--text);margin:0">Everywhere Else</h4>
+                  <p style="font-size:12px;color:var(--text2);margin:4px 0 0">No bank account or KYC friction required. If you can hold a self-custodial wallet, you can receive USDC and EURC directly. Cashing out to local money depends on the rules in your country.</p>
                 </div>
               </div>
             </div>
@@ -308,9 +316,10 @@
             <div class="arc-banner animate">
               <div class="arc-logo-sm">ARC</div>
               <div style="flex:1">
-                <div style="font-size:14px;font-weight:700;margin-bottom:3px">Built on Arc Network</div>
-                <div style="font-size:12px;color:var(--text2)">Stablecoin-native blockchain · Powered by Circle USDC</div>
+                <div style="font-size:14px;font-weight:700;margin-bottom:3px">Powered by Arc</div>
+                <div style="font-size:12px;color:var(--text2)">Fast stablecoin blockchain · Gas paid natively in USDC</div>
               </div>
+              <button class="btn btn-sm btn-ghost" onclick="navigate('docs',document.querySelectorAll('.nav-item')[10])" style="margin-right:8px">Learn more</button>
               <span class="badge badge-yellow">Chain ID: 5042002</span>
               <span class="badge badge-green">USDC Gas</span>
               <span class="badge badge-purple">EVM Compatible</span>
@@ -320,33 +329,33 @@
           <div style="display:flex;flex-direction:column;gap:18px">
             <!-- ARC TX COUNT (replaces transaction history) -->
             <div class="card animate" style="background:linear-gradient(135deg,#080d20,#0d0a20);border-color:rgba(108,63,196,0.18)">
-              <div class="section-label-sm" style="margin-bottom:10px">ARC NETWORK ACTIVITY</div>
+              <div class="section-label-sm" style="margin-bottom:10px">NETWORK ACTIVITY</div>
               <div style="display:flex;align-items:center;gap:14px">
                 <div style="width:48px;height:48px;background:rgba(108,63,196,0.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px"><svg class="ui-i" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
                 <div>
                   <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Transactions on Arc</div>
                   <div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:#a78bfa" id="home-arc-tx-count">—</div>
-                  <div style="font-size:12px;color:var(--text2);margin-top:2px">Real on-chain count · Arc Testnet</div>
+                  <div style="font-size:12px;color:var(--text2);margin-top:2px">Real on-chain count on Arc Testnet</div>
                 </div>
               </div>
             </div>
 
             <div class="card animate" style="background:linear-gradient(135deg,#0d0a00,#120e00);border-color:rgba(245,197,24,0.12)">
-              <div class="section-label-sm" style="margin-bottom:16px">ARC NETWORK STATS</div>
+              <div class="section-label-sm" style="margin-bottom:16px">NETWORK STATS</div>
               <div style="display:flex;flex-direction:column;gap:12px">
-                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Finality</span><span style="color:var(--yellow);font-weight:700">Seconds</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Speed</span><span style="color:var(--yellow);font-weight:700">Seconds</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Network fee</span><span style="color:var(--green);font-weight:700">Flat, paid in USDC</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">ArcLance fee</span><span style="color:var(--yellow);font-weight:700">None</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Countries</span><span style="color:var(--text);font-weight:700">No allowlist</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Platform fee</span><span style="color:var(--yellow);font-weight:700">0% (Free)</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Access</span><span style="color:var(--text);font-weight:700">Worldwide, no KYC</span></div>
               </div>
             </div>
 
             <div class="card animate" style="background:linear-gradient(135deg,#00120a,#001c10);border-color:rgba(0,230,118,0.15)">
               <div class="section-label-sm" style="margin-bottom:16px">THIS MONTH</div>
               <div style="display:flex;flex-direction:column;gap:12px">
-                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Total Sent</span><span style="color:var(--green);font-weight:700" id="month-total-sent">$0.00</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Total sent</span><span style="color:var(--green);font-weight:700" id="month-total-sent">$0.00</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Transactions</span><span style="color:var(--text);font-weight:700" id="month-tx-count">0</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Most Active Day</span><span style="color:var(--yellow);font-weight:700" id="month-active-day">None</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Busiest day</span><span style="color:var(--yellow);font-weight:700" id="month-active-day">None</span></div>
               </div>
             </div>
           </div>

@@ -147,7 +147,7 @@ const UISync = (() => {
     const list = document.getElementById('assets-list');
     if (!list) return;
     if (!WalletState.connected()) {
-      list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:32px 0">Connect wallet to view assets</div>';
+      list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:32px 0">Connect your wallet to see your assets</div>';
       return;
     }
     const st = WalletState.getStatus();
