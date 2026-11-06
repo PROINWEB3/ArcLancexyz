@@ -46,8 +46,8 @@ function initFooter() {
   const a = (href, label, ext = true) => `<a href="${href}" ${ext ? 'target="_blank" rel="noopener"' : ''} style="color:var(--text2);text-decoration:none;padding:6px 2px">${label}</a>`;
   f.innerHTML = `<div><strong style="color:var(--text)">${SITE.name}</strong> · Testnet build</div>
     <nav style="display:flex;gap:14px;flex-wrap:wrap" aria-label="Footer">
-      ${['docs:Docs', 'terms:Terms', 'privacy:Privacy', 'about:About', 'contact:Contact'].map((s) => { const [p, l] = s.split(':'); return `<a href="#" onclick="navigate('${p}');return false" style="color:var(--text2);text-decoration:none;padding:6px 2px">${l}</a>`; }).join('')}
-      ${a(SITE.arcscan, 'Arcscan')}${a(SITE.repo, 'GitHub')}${a(SITE.x, `X (${esc(SITE.xHandle)})`)}
+      ${['docs:Docs', 'terms:Terms', 'privacy:Privacy', 'about:About', 'support:Support', 'contact:Contact'].map((s) => { const [p, l] = s.split(':'); return `<a href="#" onclick="navigate('${p}');return false" style="color:var(--text2);text-decoration:none;padding:6px 2px">${l}</a>`; }).join('')}
+      ${a(SITE.arcscan, 'Arcscan')}${a(SITE.repo, 'GitHub')}${a(SITE.x, `X (${esc(SITE.xHandle)})`)}${a('https://x.com/PROinWeb3', 'X (@PROinWeb3)')}
     </nav>`;
   main.appendChild(f);
 }

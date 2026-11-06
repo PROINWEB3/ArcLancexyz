@@ -163,7 +163,7 @@ const TOPICS: Topic[] = [
     id: 'paylink',
     keywords: ['pay link', 'paylink', 'payment link', 'share link', 'username', 'my link'],
     reply: () =>
-      '**Pay Link:**\n1. Open **Pay Link**.\n2. Connect your wallet. Your address is filled in automatically.\n3. Optionally set a default amount and a note.\n4. Copy the link or share it on WhatsApp. Anyone who opens it can pay you in USDC.\nIt is the easiest way to get paid by someone who does not use ArcLance.',
+      '**Pay Link:**\n1. Open **Pay Link**.\n2. Connect your wallet. Your address is filled in automatically.\n3. Optionally set a default amount and a note.\n4. Copy the link or share it with your client. Anyone who opens it can pay you in USDC.\nIt is the easiest way to get paid by someone who does not use ArcLance.',
   },
   {
     id: 'escrow',
@@ -328,8 +328,8 @@ export function answer(message: string, ctx: AssistantContext, lang: Lang = 'en'
 }
 
 export const FALLBACK_NOTE = 'AI service is not configured, so this answer comes from the built-in guide.'
-export const DOCS_LINE = 'For facts I am not sure about, please check the official docs: docs.arc.io and developers.circle.com.'
-export const NO_MATCH_TEXT = `I'm not sure about that one. I can explain Send, Receive, Swap, Bridge, Invoices, Pay Link, Escrow, P2P, the Faucet and History, plus wallets, gas, USDC and EURC, Layer 1 blockchains, Arc, Circle, CCTP, stablecoins, DeFi, NFTs, swap pricing, testnet vs mainnet and scam safety. I can also look up live crypto prices (for example "Bitcoin price"). ${DOCS_LINE}`
+export const DOCS_LINE = 'For facts I am not sure about, please check the official docs: docs.arc.io and developers.circle.com, or contact support@arclance.xyz.'
+export const NO_MATCH_TEXT = `I am not sure, please contact support@arclance.xyz. I can explain Send, Receive, Swap, Bridge, Invoices, Pay Link, Escrow, P2P, the Faucet and History, plus wallets, gas, USDC and EURC, Layer 1 blockchains, Arc, Circle, CCTP, stablecoins, DeFi, NFTs, swap pricing, testnet vs mainnet and scam safety. I can also look up live crypto prices (for example "Bitcoin price"). ${DOCS_LINE}`
 
 export const noMatchText = (lang: Lang): string => PACKS[lang]?.noMatch ?? NO_MATCH_TEXT
 
@@ -340,7 +340,7 @@ export const LANGUAGE_NOTE =
 /** The assistant's own screen text. English by default, whatever language the user writes in. */
 export const ASSISTANT_UI = {
   welcomeHtml:
-    "Hey! I'm your <strong>ArcLance AI</strong> assistant.<br><br>Ask me about wallet setup, Arc Testnet, USDC payments, Send, Swap, Bridge, Invoices, Pay Link, Escrow or P2P. I can also explain Web3 basics, look up live crypto prices, and answer in English, Urdu, Hindi, Bengali or Nigerian Pidgin.",
+    "Hey! I'm your <strong>ArcLance AI</strong> assistant, built by 𝐇𝐚𝐬𝐧𝐚𝐢𝐧𝐀𝐈⚡.<br><br>Ask me about crypto, wallets, gas, Arc Testnet, USDC payments, Send, Swap, Bridge, Invoices, Pay Link, Escrow or P2P. I can also explain Web3 basics, look up live crypto prices, and answer in English, Urdu, Hindi, Bengali or Nigerian Pidgin, as well as Roman Urdu, Hausa, Yoruba, and Igbo.",
   chips: [
     { label: 'Bitcoin price', query: 'What is the Bitcoin price?' },
     { label: 'What is Layer 1?', query: 'What is a Layer 1 blockchain?' },

@@ -5,8 +5,14 @@ export const SITE = {
   github: 'https://github.com/PROINWEB3',
   /** The ArcLance code repository. */
   repo: 'https://github.com/PROINWEB3/ArcLancexyz',
-  x: 'https://x.com/PROinWeb3',
-  xHandle: '@PROinWeb3',
+  x: 'https://x.com/Arclancexyz',
+  xHandle: '@Arclancexyz',
+  builderX: 'https://x.com/Hasnain_Akhtar_',
+  builderName: '𝐇𝐚𝐬𝐧𝐚𝐢𝐧𝐀𝐈⚡',
+  builderNameAria: 'HasnainAI',
+  telegram: 'https://t.me/HasnainSE',
+  supportEmail: 'support@arclance.xyz',
+  helloEmail: 'hello@arclance.xyz',
   /** Official Arc documentation. */
   arcDocs: 'https://docs.arc.io',
   /** Arcscan, the Arc Testnet block explorer. */

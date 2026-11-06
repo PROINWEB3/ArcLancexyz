@@ -210,7 +210,7 @@ invoice: `**Create & Send Invoices:**
 4. Wallet address auto-fills when connected
 5. Click **CREATE INVOICE** — sign in wallet
 6. **Download PDF** or copy payment link
-7. Share via **WhatsApp** or email
+7. Share via email or messaging
 8. Client clicks PAY — USDC is sent once the transaction is confirmed`,
 
 failed: `**Transaction Failed? Fix It:**
@@ -220,7 +220,7 @@ failed: `**Transaction Failed? Fix It:**
 4. Check transaction: **https://testnet.arcscan.app**
 5. Disconnect wallet → reconnect → try again
 6. Refresh page if stuck on loading
-7. Need help? **discord.gg/buildonarc**`
+7. Need help? **support@arclance.xyz**`
 };
 
 let lastTopic = null;
@@ -274,7 +274,7 @@ const arcElaborations = {
 - Send direct payment links on your social media profiles or email signature.
 - Use Swap to convert a portion of USDC to EURC if you want to hedge against specific currencies.`,
   faucet: `\n\n**Faucet Troubleshooting:**
-- If the faucet says "Rate limited", try again in 24 hours or ask in the Discord.
+- If the faucet says "Rate limited", try again in 24 hours.
 - Ensure your wallet address is copied exactly.`,
   invoice: `\n\n**Invoice PDF details:**
 - When you create an invoice your wallet signs a message. Only a short prefix of that signature is saved in your browser. Invoices are not stored on-chain.`,
@@ -387,8 +387,8 @@ function getLocalReply(msg) {
   if (l.includes('mainnet') || l.includes('when mainnet') || l.includes('live when')) {
     return "Arc is currently on Testnet. Mainnet is coming soon! All your testing now will work on Mainnet too.";
   }
-  if (l.includes('discord') || l.includes('support') || l.includes('help') || l.includes('contact')) {
-    return "Need support? Join our Discord: discord.gg/buildonarc or check docs at docs.arc.io";
+  if (l.includes('support') || l.includes('help') || l.includes('contact')) {
+    return "Need support? Contact support@arclance.xyz or check docs at docs.arc.io";
   }
   if (l.includes('thanks') || l.includes('thank you') || l.includes('شکریہ') || l.includes('جزاک اللہ')) {
     return "You're welcome! Let me know if you need anything else. Happy earning with ArcLance! ";

@@ -230,7 +230,9 @@ window.checkDueRecurringPayments = function() {
 window.shareInvoiceReminder = function(client, number, amount, walletAddr) {
   const payLink = buildPayLink(walletAddr || '', amount, number);
   const msg = `Hi ${client}, friendly reminder that invoice ${number} for ${amount} USDC is due. Pay here: ${payLink}`;
-  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(msg).then(() => showToast('Reminder copied to clipboard!')).catch(() => showToast('Copy failed'));
+  }
 };
 
 // 2. Auto Invoice Number Helpers

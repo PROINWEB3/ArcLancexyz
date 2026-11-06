@@ -23,7 +23,7 @@ Tests: `npm run test:swap` runs 40 tests (23 swap, 17 for this round). `bun run 
 ## 4. Facts and consistency
 - Docs RPC is `https://rpc.testnet.arc.network` (docs, faucet page). The app config still uses `rpc.testnet.arc.io`; both answer.
 - Sidebar Arc docs link is `https://docs.arc.io` (checked, official).
-- One pay link format: `https://arclance.xyz/pay/<username-or-address>/<amount>/<label>`. Used by the invoice preview and copy, the Pay Link page, WhatsApp text, receipts, the username share link and the docs. `vercel.json` rewrites `/pay/*` so the links open. Older `#/pay/...` links still work. A username only resolves on the device that saved it, so links use the wallet address when there is no username.
+- One pay link format: `https://arclance.xyz/pay/<username-or-address>/<amount>/<label>`. Used by the invoice preview and copy, the Pay Link page, receipts, the username share link and the docs. `vercel.json` rewrites `/pay/*` so the links open. Older `#/pay/...` links still work. A username only resolves on the device that saved it, so links use the wallet address when there is no username.
 - Docs bridge: duplicate row removed; list renamed "Example routes" with a line pointing to the Bridge page.
 - Dashboard Networks: 3 (Arc, Ethereum Sepolia, Base Sepolia), same as Multi-Chain Balance.
 - Invoice escrow notice: the placeholder is replaced by the real ArcLanceEscrow address, linked to testnet.arcscan.app, with the note that real escrows are created on the Escrow page.

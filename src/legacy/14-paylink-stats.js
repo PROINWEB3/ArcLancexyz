@@ -329,33 +329,6 @@ async function copyMainPayLink() {
   navigator.clipboard.writeText(buildPayLink(target, amt, service)).then(()=>showToast('Payment link copied!')).catch(()=>showToast('Copy failed'));
 }
 
-async function sharePayLinkWhatsApp() {
-  const rawWallet = document.getElementById('pl-wallet')?.value?.trim() || '';
-  const amt = document.getElementById('pl-amount')?.value?.trim() || '0';
-  const service = document.getElementById('pl-service')?.value?.trim() || 'Freelance Services';
-
-  let target = rawWallet || 'your-wallet-address';
-  if (isRegistryConfigured() && rawWallet && rawWallet !== 'your-wallet-address' && !/^0x[0-9a-fA-F]{40}$/.test(rawWallet)) {
-    const res = await resolvePlUsername(rawWallet);
-    if (!res.ok || !res.address) {
-      plWalletBlocked = true;
-      setPlCopyButtonsDisabled(true);
-      showToast('Name not registered');
-      return;
-    }
-    plWalletBlocked = false;
-    setPlCopyButtonsDisabled(false);
-    target = res.name;
-  } else if (isRegistryConfigured() && plWalletBlocked) {
-    showToast('Name not registered');
-    return;
-  }
-
-  const link = buildPayLink(target, amt, service);
-  const msg = encodeURIComponent(`Hi! Here's my payment link for ${service}:\n\n${link}\n\nAmount: ${amt} USDC (≈ $${amt} USD)\n\nPay with any crypto wallet. Powered by ArcLance.`);
-  window.open('https://wa.me/?text=' + msg, '_blank');
-}
-
 function renderCountries() {
   const countries=[['PK','Pakistan'],['IN','India'],['BD','Bangladesh'],['NG','Nigeria'],['ID','Indonesia'],['PH','Philippines'],['KE','Kenya'],['EG','Egypt'],['ZA','South Africa'],['BR','Brazil'],['MX','Mexico'],['TR','Turkey'],['VN','Vietnam'],['TH','Thailand'],['MA','Morocco'],['LK','Sri Lanka'],['NP','Nepal'],['AE','UAE'],['AR','Argentina'],['CO','Colombia']];
   const grid=document.getElementById('countries-grid');
@@ -364,4 +337,4 @@ function renderCountries() {
 }
 
 
-publish({ updateHomeFreelancerStats, onPlWalletInput, useMyWalletForPayLink, updateMainPayLink, handlePayLinkPreviewPay, copyMainPayLink, sharePayLinkWhatsApp, renderCountries });
+publish({ updateHomeFreelancerStats, onPlWalletInput, useMyWalletForPayLink, updateMainPayLink, handlePayLinkPreviewPay, copyMainPayLink, renderCountries });
