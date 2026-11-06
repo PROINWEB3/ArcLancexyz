@@ -205,10 +205,10 @@ test('footer links and page titles', async () => {
   assert.match(f.textContent, /ArcLance/); assert.match(f.textContent, /Testnet build/);
   const hrefs = [...f.querySelectorAll('a')].map((a) => a.getAttribute('href'));
   assert.ok(hrefs.includes('https://github.com/PROINWEB3/ArcLancexyz') && hrefs.includes('https://testnet.arcscan.app'));
-  for (const l of ['Docs', 'Terms', 'Privacy', 'About', 'Contact']) assert.ok([...f.querySelectorAll('a')].some((x) => x.textContent.trim() === l), 'footer link ' + l);
+  for (const l of ['Docs', 'Freelancer Guide', 'Terms', 'Privacy', 'About', 'Contact']) assert.ok([...f.querySelectorAll('a')].some((x) => x.textContent.trim() === l), 'footer link ' + l);
   assert.ok([...f.querySelectorAll('a')].some((a) => /@Arclancexyz/.test(a.textContent) && a.href.startsWith('https://x.com/Arclancexyz')));
   assert.ok([...f.querySelectorAll('a')].some((a) => a.textContent.trim() === 'Docs'));
-  for (const [page, title] of [['swap', 'Swap | ArcLance'], ['bridge', 'Bridge | ArcLance'], ['escrow', 'Escrow | ArcLance'], ['docs', 'Docs | ArcLance'], ['home', 'Home | ArcLance']]) {
+  for (const [page, title] of [['swap', 'Swap | ArcLance'], ['bridge', 'Bridge | ArcLance'], ['escrow', 'Escrow | ArcLance'], ['docs', 'Docs | ArcLance'], ['guide', 'Freelancer Guide | ArcLance'], ['home', 'Home | ArcLance']]) {
     await t.W.navigate(page); assert.equal(t.D.title, title);
   }
 });
@@ -334,7 +334,7 @@ test('receipt uses the transaction time, not a fixed date', async () => {
 
 test('no console errors on any page', async () => {
   const t = await mount();
-  for (const pg of ['home', 'payments', 'swap', 'bridge', 'escrow', 'p2p', 'invoices', 'paylink', 'ai', 'faucet', 'docs']) { await t.W.navigate(pg); await sleep(60); }
+  for (const pg of ['home', 'payments', 'swap', 'bridge', 'escrow', 'p2p', 'invoices', 'paylink', 'ai', 'faucet', 'docs', 'guide']) { await t.W.navigate(pg); await sleep(60); }
   assert.deepEqual(t.errors, []);
 });
 
@@ -605,7 +605,7 @@ test('username text says it is saved in this browser, not on-chain', () => {
 test('footer pages open: Terms, Privacy, About and Contact are reachable and titled', async () => {
   const t = await mount();
   const footer = [...t.D.querySelectorAll('#siteFooter a')];
-  for (const [label, id, title] of [['Terms', 'terms', 'Terms | ArcLance'], ['Privacy', 'privacy', 'Privacy | ArcLance'], ['About', 'about', 'About | ArcLance'], ['Contact', 'contact', 'Contact | ArcLance']]) {
+  for (const [label, id, title] of [['Terms', 'terms', 'Terms | ArcLance'], ['Privacy', 'privacy', 'Privacy | ArcLance'], ['About', 'about', 'About | ArcLance'], ['Contact', 'contact', 'Contact | ArcLance'], ['Freelancer Guide', 'guide', 'Freelancer Guide | ArcLance']]) {
     footer.find((a) => a.textContent.trim() === label).click();
     await sleep(60);
     assert.ok(t.D.getElementById('page-' + id).classList.contains('active'), id + ' page is shown');
