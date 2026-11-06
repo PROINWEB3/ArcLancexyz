@@ -101,8 +101,8 @@ export const INFO_PAGES = {
     title: 'Contact',
     summary: 'How to reach ArcLance',
     sections: () => [
-      sec('Find us', ul([`X: <a href="${SITE.x}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.xHandle}</a>`, `Code: <a href="${SITE.repo}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.repo.replace('https://', '')}</a>`, `Email: ${TBD}`])),
-      sec('Reporting a problem or a security issue', `Support and security contact: ${TBD}<br>Never send a seed phrase or private key to anyone. ArcLance will never ask for one.`),
+      sec('Find us', ul([`X: <a href="${SITE.x}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.xHandle}</a>`, `Code: <a href="${SITE.repo}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.repo.replace('https://', '')}</a>`, `Email: <a href="mailto:${SITE.supportEmail}" style="color:var(--yellow-ink)">${SITE.supportEmail}</a>, <a href="mailto:${SITE.helloEmail}" style="color:var(--yellow-ink)">${SITE.helloEmail}</a> `])),
+      sec('Reporting a problem or a security issue', `Support and security contact: <a href="mailto:${SITE.supportEmail}" style="color:var(--yellow-ink)">${SITE.supportEmail}</a> <br>Never send a seed phrase or private key to anyone. ArcLance will never ask for one.`),
     ],
   },
   clients: {

@@ -623,10 +623,11 @@ test('Terms and Privacy say: testnet demo, non-custodial, no real funds, data in
 
 test('owner-only facts are marked, not invented', async () => {
   const t = await mount();
-  for (const id of ['terms', 'privacy', 'contact']) assert.ok(t.D.querySelectorAll(`#page-${id} .placeholder`).length >= 1, id + ' has a marked placeholder');
+  for (const id of ['terms', 'privacy']) assert.ok(t.D.querySelectorAll(`#page-${id} .placeholder`).length >= 1, id + ' has a marked placeholder');
   for (const el of t.D.querySelectorAll('.placeholder')) assert.equal(el.textContent, '[TO BE ADDED BY OWNER]');
   const contact = t.text('#page-contact');
-  assert.ok(!/@[a-z0-9-]+\.[a-z]{2,}/i.test(contact), 'no email address is made up');
+  const emails = contact.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi) || [];
+  assert.ok(emails.includes('support@arclance.xyz') && emails.includes('hello@arclance.xyz') && emails.every((e) => e === 'support@arclance.xyz' || e === 'hello@arclance.xyz'), 'no email address is made up');
   assert.ok(t.D.querySelector('#page-contact a[href="https://github.com/PROINWEB3/ArcLancexyz"]') && t.D.querySelector('#page-contact a[href="https://x.com/Arclancexyz"]'));
 });
 
