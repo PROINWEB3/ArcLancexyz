@@ -63,7 +63,12 @@ export const INFO_PAGES = {
       ])),
       sec('Team', ul([
         `<strong>${SITE.builderName}</strong> (<a href="${SITE.builderX}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">@Hasnain_Akhtar_</a>) — Lead Developer & Architecture`,
-        `Team and contributor openings: ${TBD}`,
+        `Want to contribute or join the team? Write to <a href="mailto:${SITE.helloEmail}" style="color:var(--yellow-ink)">${SITE.helloEmail}</a>.`,
+      ])),
+      sec('Contact', ul([
+        `Support: <a href="mailto:${SITE.supportEmail}" style="color:var(--yellow-ink)">${SITE.supportEmail}</a>`,
+        `General Inquiries: <a href="mailto:${SITE.helloEmail}" style="color:var(--yellow-ink)">${SITE.helloEmail}</a>`,
+        `Support Page: <a href="#" onclick="navigate('support');return false" style="color:var(--yellow-ink)">Visit Support & Help Center</a>`,
       ])),
     ],
   },
@@ -96,7 +101,7 @@ export const INFO_PAGES = {
     title: 'Contact',
     summary: 'How to reach ArcLance',
     sections: () => [
-      sec('Find us', ul([`X: <a href="https://x.com/PROinWeb3" target="_blank" rel="noopener" style="color:var(--yellow-ink)">@PROinWeb3</a>`, `Code: <a href="${SITE.repo}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.repo.replace('https://', '')}</a>`, `Email: ${TBD}`])),
+      sec('Find us', ul([`X: <a href="${SITE.x}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.xHandle}</a>`, `Code: <a href="${SITE.repo}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.repo.replace('https://', '')}</a>`, `Email: ${TBD}`])),
       sec('Reporting a problem or a security issue', `Support and security contact: ${TBD}<br>Never send a seed phrase or private key to anyone. ArcLance will never ask for one.`),
     ],
   },

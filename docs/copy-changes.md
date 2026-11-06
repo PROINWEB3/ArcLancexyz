@@ -54,7 +54,7 @@ Tests: `npm run test:swap` runs 40 tests (23 swap, 17 for this round). `bun run 
 - Cash Out Guide: "Rules on crypto differ by country. Check your local regulations. This is not financial advice."
 
 ## 10. Footer and meta
-- Footer: ArcLance, Docs, Arcscan, GitHub, X (@PROinWeb3), "Testnet build" (`src/config/site.ts`).
+- Footer: ArcLance, Docs, Arcscan, GitHub, X (@Arclancexyz), "Testnet build" (`src/config/site.ts`).
 - Page titles such as "Swap | ArcLance". Meta description, Open Graph and Twitter tags, canonical link.
 
 ## 11. Mobile
