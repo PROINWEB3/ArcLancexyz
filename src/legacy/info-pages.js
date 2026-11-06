@@ -151,6 +151,35 @@ export const INFO_PAGES = {
       sec('Good to know', ul(['If a link does not open or the address looks wrong, do not pay. Ask the freelancer for a new link.'])),
     ],
   },
+  guide: {
+    title: 'Freelancer Guide',
+    summary: 'A plain-language guide to getting paid in USDC, sharing links, cashing out, and staying safe',
+    sections: () => [
+      sec('1. How to get paid in USDC', ul([
+        '<strong>Connect your self-custodial wallet.</strong> Use a browser wallet such as MetaMask. You hold your own private keys and funds at all times; ArcLance never takes custody.',
+        '<strong>Fast settlement on Arc.</strong> Payments settle in seconds directly on Arc Testnet, with low network fees paid natively in USDC.',
+        '<strong>Receive funds.</strong> Copy your wallet address by clicking your connected wallet in the top bar (then "Copy Address") or from the Receive tab under Send & Receive, then share it with your client or create a Pay Link.',
+      ])),
+      sec('2. How to share a Pay Link or invoice', ul([
+        '<strong>Create a Pay Link.</strong> Open the Pay Link page, enter the amount and a service label, and copy your link (format: <span style="font-family:\'JetBrains Mono\',monospace">https://arclance.xyz/pay/&lt;address&gt;/&lt;amount&gt;/&lt;label&gt;</span>). Send this link to your client so they can open it and pay after confirming in their wallet. A Pay Link is just a link that carries the address, amount and label; nothing is stored for it.',
+        '<strong>Create an invoice.</strong> On the Invoices page, generate a clear invoice with an invoice number, client name, description, and due date.',
+        '<strong>Browser-only storage.</strong> Only invoices are saved in this browser. Clearing your browser data removes them, so export a backup regularly from the Invoices page.',
+      ])),
+      sec('3. How to cash out locally', `Peer-to-peer (P2P) transfers connect you directly with local buyers who send local currency (via bank transfer, mobile money, or local payment apps) in exchange for your USDC.<br><br><strong>Important safety & risk notes:</strong>${ul([
+        '<strong>Verify the other party before you start:</strong> confirm their payment details and never rush.',
+        '<strong>Never release funds early.</strong> Only release your USDC after you personally check your bank or payment app and confirm the cleared funds have arrived. Never rely on screenshots, SMS alerts, or payer claims.',
+        '<strong>Never share your private key or seed phrase.</strong> No genuine buyer, trader, or support agent will ever ask for your private key or seed phrase.',
+        '<strong>Local rules vary.</strong> Rules and taxes on cryptocurrency differ by country; check your local regulations before cashing out. This guide is for general education only and does not provide financial, legal, or tax advice.',
+      ])}`),
+      sec('4. How to avoid scams', ul([
+        '<strong>Protect your seed phrase.</strong> Never share your seed phrase, private key, or wallet passwords with anyone, including ArcLance.',
+        '<strong>Beware of impersonators.</strong> ArcLance admins and team members will never direct-message (DM) you first or ask for funds.',
+        '<strong>Check addresses and networks.</strong> Always verify the recipient address and confirm your wallet is connected to Arc Testnet before approving transactions.',
+        `<strong>Official help only.</strong> If you encounter a problem or suspect a scam, contact our team only at <a href="mailto:${SITE.supportEmail}" style="color:var(--yellow-ink)">${SITE.supportEmail}</a> or <a href="mailto:${SITE.helloEmail}" style="color:var(--yellow-ink)">${SITE.helloEmail}</a>. We do not provide support through WhatsApp, phone calls, or personal email addresses.`,
+      ])),
+      sec('5. Testnet tokens have no real value', `${testnetNote}<br>All tokens on ArcLance (testnet USDC, EURC, and cirBTC) are for testing and demonstration purposes only. They have zero monetary value and cannot be redeemed for real money. Do not send or deposit real funds. You can get free test tokens anytime from the Faucet page.`),
+    ],
+  },
   roadmap: {
     title: 'Roadmap (planned, no dates)',
     summary: 'What is planned for freelancers. None of this is available today.',
