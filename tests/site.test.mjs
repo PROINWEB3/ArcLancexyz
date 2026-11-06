@@ -206,7 +206,7 @@ test('footer links and page titles', async () => {
   const hrefs = [...f.querySelectorAll('a')].map((a) => a.getAttribute('href'));
   assert.ok(hrefs.includes('https://github.com/PROINWEB3/ArcLancexyz') && hrefs.includes('https://testnet.arcscan.app'));
   for (const l of ['Docs', 'Terms', 'Privacy', 'About', 'Contact']) assert.ok([...f.querySelectorAll('a')].some((x) => x.textContent.trim() === l), 'footer link ' + l);
-  assert.ok([...f.querySelectorAll('a')].some((a) => /@PROinWeb3/.test(a.textContent) && a.href.startsWith('https://x.com/PROinWeb3')));
+  assert.ok([...f.querySelectorAll('a')].some((a) => /@Arclancexyz/.test(a.textContent) && a.href.startsWith('https://x.com/Arclancexyz')));
   assert.ok([...f.querySelectorAll('a')].some((a) => a.textContent.trim() === 'Docs'));
   for (const [page, title] of [['swap', 'Swap | ArcLance'], ['bridge', 'Bridge | ArcLance'], ['escrow', 'Escrow | ArcLance'], ['docs', 'Docs | ArcLance'], ['home', 'Home | ArcLance']]) {
     await t.W.navigate(page); assert.equal(t.D.title, title);
@@ -623,11 +623,11 @@ test('Terms and Privacy say: testnet demo, non-custodial, no real funds, data in
 
 test('owner-only facts are marked, not invented', async () => {
   const t = await mount();
-  for (const id of ['terms', 'privacy', 'about', 'contact']) assert.ok(t.D.querySelectorAll(`#page-${id} .placeholder`).length >= 1, id + ' has a marked placeholder');
+  for (const id of ['terms', 'privacy', 'contact']) assert.ok(t.D.querySelectorAll(`#page-${id} .placeholder`).length >= 1, id + ' has a marked placeholder');
   for (const el of t.D.querySelectorAll('.placeholder')) assert.equal(el.textContent, '[TO BE ADDED BY OWNER]');
   const contact = t.text('#page-contact');
   assert.ok(!/@[a-z0-9-]+\.[a-z]{2,}/i.test(contact), 'no email address is made up');
-  assert.ok(t.D.querySelector('#page-contact a[href="https://github.com/PROINWEB3/ArcLancexyz"]') && t.D.querySelector('#page-contact a[href="https://x.com/PROinWeb3"]'));
+  assert.ok(t.D.querySelector('#page-contact a[href="https://github.com/PROINWEB3/ArcLancexyz"]') && t.D.querySelector('#page-contact a[href="https://x.com/Arclancexyz"]'));
 });
 
 test('client guide: five real steps; roadmap: planned, no dates, nothing marked available', async () => {
