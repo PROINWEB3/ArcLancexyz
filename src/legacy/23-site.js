@@ -42,12 +42,12 @@ function initFooter() {
   if (!main || $('siteFooter')) return;
   const f = document.createElement('footer');
   f.id = 'siteFooter';
-  f.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;padding:8px 20px;border-top:1px solid var(--border);background:var(--bg2);font-size:11px;color:var(--text2);flex-shrink:0';
-  const a = (href, label, ext = true) => `<a href="${href}" ${ext ? 'target="_blank" rel="noopener"' : ''} style="color:var(--text2);text-decoration:none;padding:6px 2px">${label}</a>`;
+  f.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;padding:8px 20px;border-top:1px solid var(--border);background:var(--bg2);font-size:11px;color:var(--text2);flex-shrink:0';
+  const a = (href, label, ext = true) => `<a href="${href}" ${ext ? 'target="_blank" rel="noopener"' : ''} style="color:var(--text2);text-decoration:none;padding:6px 4px;display:inline-block">${label}</a>`;
   f.innerHTML = `<div><strong style="color:var(--text)">${SITE.name}</strong> · Testnet build</div>
-    <nav style="display:flex;gap:14px;flex-wrap:wrap" aria-label="Footer">
-      ${['docs:Docs', 'guide:Freelancer Guide', 'terms:Terms', 'privacy:Privacy', 'about:About', 'support:Support', 'contact:Contact'].map((s) => { const [p, l] = s.split(':'); return `<a href="#" onclick="navigate('${p}');return false" style="color:var(--text2);text-decoration:none;padding:6px 2px">${l}</a>`; }).join('')}
-      ${a(SITE.arcscan, 'Arcscan')}${a(SITE.repo, 'GitHub')}${a(SITE.x, `X (${esc(SITE.xHandle)})`)}
+    <nav style="display:flex;gap:4px 12px;flex-wrap:wrap;align-items:center" aria-label="Footer">
+      ${['docs:Docs', 'guide:Freelancer Guide', 'terms:Terms', 'privacy:Privacy', 'about:About', 'support:Support', 'contact:Contact'].map((s) => { const [p, l] = s.split(':'); return `<a href="#" onclick="navigate('${p}');return false" style="color:var(--text2);text-decoration:none;padding:6px 4px;display:inline-block">${l}</a>`; }).join('')}
+      ${a(SITE.x, `X (${esc(SITE.xHandle)})`)}
     </nav>`;
   main.appendChild(f);
 }

@@ -203,8 +203,6 @@ test('footer links and page titles', async () => {
   const f = t.D.getElementById('siteFooter');
   assert.ok(f, 'footer exists');
   assert.match(f.textContent, /ArcLance/); assert.match(f.textContent, /Testnet build/);
-  const hrefs = [...f.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-  assert.ok(hrefs.includes('https://github.com/PROINWEB3/ArcLancexyz') && hrefs.includes('https://testnet.arcscan.app'));
   for (const l of ['Docs', 'Freelancer Guide', 'Terms', 'Privacy', 'About', 'Contact']) assert.ok([...f.querySelectorAll('a')].some((x) => x.textContent.trim() === l), 'footer link ' + l);
   assert.ok([...f.querySelectorAll('a')].some((a) => /@Arclancexyz/.test(a.textContent) && a.href.startsWith('https://x.com/Arclancexyz')));
   assert.ok([...f.querySelectorAll('a')].some((a) => a.textContent.trim() === 'Docs'));
