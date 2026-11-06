@@ -60,7 +60,7 @@ Use these as the small grey text under each page title.
 - **Escrow:** "Pay freelancers milestone by milestone. The money is held safely until you approve the work."
 - **P2P:** "Sell USDC for local money or buy it from others. The seller's USDC stays locked until payment is confirmed."
 - **Invoices:** "Create a professional invoice and send a link. Get paid in USDC or EURC."
-- **Pay Link:** "One link for all your clients. Share it on WhatsApp, email or your profile."
+- **Pay Link:** "One link for all your clients. Share it via email, chat or your profile."
 - **AI Assistant:** "Ask how anything works. Never share your seed phrase with anyone, including this chat."
 - **Faucet:** "Free test USDC for Arc Testnet. Test money has no real value."
 

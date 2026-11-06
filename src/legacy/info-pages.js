@@ -40,20 +40,63 @@ export const INFO_PAGES = {
   },
   about: {
     title: 'About ArcLance',
-    summary: 'A payment page for freelancers, on Arc Testnet',
+    summary: 'A borderless stablecoin payment platform for freelancers, built on Arc Testnet',
     sections: () => [
-      sec('What it is', `${testnetNote}<br>ArcLance is a payment page for freelancers who get paid in USDC or EURC. You connect your own wallet; ArcLance never holds your funds.`),
-      sec('What you can do today', ul(['Send and receive USDC, EURC and cirBTC, with a payment history and receipts.', 'Create invoices (saved in your browser) and share a pay link with your wallet address.', 'Swap USDC and EURC, and bridge USDC and EURC between supported test networks.', 'Use milestone Escrow and P2P (USDC for local money) on testnet.', 'Ask the built-in assistant for help, in English, Urdu, Hindi, Bengali or Nigerian Pidgin.'])),
-      sec('Built on Arc', 'Arc is a Layer 1 blockchain from Circle where USDC is used for fees. ArcLance currently runs on Arc Testnet only. See the Roadmap for what is planned.'),
-      sec('Code', `<a href="${SITE.repo}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.repo.replace('https://', '')}</a>`),
-      sec('Who is behind it', `Team and company details: ${TBD}`),
+      sec('What it is', `ArcLance is a money-powered payment platform built for freelancers, remote contractors, and independent creators worldwide.<br>It lets you issue invoices, receive direct client payments in USDC and EURC, swap tokens, bridge across test networks, and lock USDC in escrow for one order (one order, one amount, no milestones, no guaranteed protection).<br>You connect your own self-custodial wallet; ArcLance never holds your private keys, funds, or custody.`),
+      sec('Builder & Community', ul([
+        `Built by <span aria-label="${SITE.builderNameAria}">${SITE.builderName}</span>`,
+        `Builder X: <a href="${SITE.builderX}" target="_blank" rel="noopener" style="color:var(--yellow-ink)"><span aria-label="${SITE.builderNameAria}">${SITE.builderName}</span></a>`,
+        `Official X: <a href="${SITE.x}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.xHandle}</a>`,
+        `Telegram: <a href="${SITE.telegram}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.telegram.replace('https://', '')}</a>`,
+        `GitHub: <a href="${SITE.repo}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.repo.replace('https://', '')}</a>`,
+      ])),
+      sec('Status & Roadmap', ul([
+        '<strong>Status:</strong> Live on <strong>Arc Testnet</strong> today (practice tokens with no real-world value). <strong>Mainnet</strong> launch is planned.',
+        '<strong>Saved data across devices:</strong> Multi-device encrypted sync for invoices and usernames (planned, not available).',
+        '<strong>On-chain escrow improvements:</strong> Contract locks for single orders (one order, one amount, no milestones, no guaranteed protection; planned, not available).',
+        '<strong>Local cash-out guides:</strong> Country-by-country fiat ramp walkthroughs (planned, not available).',
+      ])),
+      sec('Privacy Statement (On-chain vs Off-chain)', ul([
+        '<strong>Off-chain browser data:</strong> Invoices, usernames, contacts, and reminders are saved locally in your browser with a 7-day temporary session cache. Clearing your browser data deletes them.',
+        '<strong>On-chain immutable records:</strong> Payments, bridge burns/mints, escrow state, and P2P order transactions are broadcast to public blockchains. Blockchain data is permanent and can never be deleted or altered.',
+        'ArcLance does not run tracker scripts, third-party advertising cookies, or centralized account databases.',
+      ])),
+      sec('Team', ul([
+        `<strong>${SITE.builderName}</strong> (<a href="${SITE.builderX}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">@Hasnain_Akhtar_</a>) — Lead Developer & Architecture`,
+        `Team and contributor openings: ${TBD}`,
+      ])),
+    ],
+  },
+  support: {
+    title: 'Support & Help Center',
+    summary: 'Official ArcLance assistance, scam warnings, and contact channels',
+    sections: () => [
+      sec('Important Scam & Security Warning', `<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:12px;color:var(--red);font-weight:600;line-height:1.6">
+        🚨 <strong>ArcLance team never asks for your private key, seed phrase or password. Official admins never DM first. Never share screenshots showing personal details.</strong>
+      </div>`),
+      sec('Contact & Inquiries', ul([
+        `General Support: <a href="mailto:${SITE.supportEmail}" style="color:var(--yellow-ink)">${SITE.supportEmail}</a>`,
+        `Hello / Inquiries: <a href="mailto:${SITE.helloEmail}" style="color:var(--yellow-ink)">${SITE.helloEmail}</a>`,
+        `Report a Problem: <a href="mailto:${SITE.supportEmail}?subject=ArcLance%20Problem%20Report" style="color:var(--yellow-ink)">Click here to report an issue via email</a>`,
+      ])),
+      sec('Official Channels', ul([
+        `X (Twitter): <a href="${SITE.x}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.xHandle}</a>`,
+        `Telegram: <a href="${SITE.telegram}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.telegram.replace('https://', '')}</a>`,
+        `Code Issues: <a href="${SITE.repo}/issues" target="_blank" rel="noopener" style="color:var(--yellow-ink)">GitHub Issues</a>`,
+      ])),
+      sec('Frequently Asked Questions (FAQ)', ul([
+        '<strong>Do I need real money to test?</strong> No. ArcLance is on Arc Testnet. Get free test USDC and EURC from the Faucet page.',
+        '<strong>Why does Arc pay gas in USDC?</strong> Arc is a Layer 1 blockchain designed by Circle where gas fees are paid natively in USDC instead of volatile tokens.',
+        '<strong>Are invoices stored in a cloud database?</strong> No. Invoices are stored in your local browser storage for privacy.',
+        '<strong>How can I report a bug or dispute?</strong> Email support@arclance.xyz or open an issue on our GitHub repository.',
+      ])),
     ],
   },
   contact: {
     title: 'Contact',
     summary: 'How to reach ArcLance',
     sections: () => [
-      sec('Find us', ul([`X: <a href="${SITE.x}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.xHandle}</a>`, `Code: <a href="${SITE.repo}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.repo.replace('https://', '')}</a>`, `Email: ${TBD}`])),
+      sec('Find us', ul([`X: <a href="https://x.com/PROinWeb3" target="_blank" rel="noopener" style="color:var(--yellow-ink)">@PROinWeb3</a>`, `Code: <a href="${SITE.repo}" target="_blank" rel="noopener" style="color:var(--yellow-ink)">${SITE.repo.replace('https://', '')}</a>`, `Email: ${TBD}`])),
       sec('Reporting a problem or a security issue', `Support and security contact: ${TBD}<br>Never send a seed phrase or private key to anyone. ArcLance will never ask for one.`),
     ],
   },

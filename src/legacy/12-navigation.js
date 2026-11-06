@@ -187,6 +187,7 @@ async function navigate(page, el) { const openReceiveTab = page === 'receive'; i
     terms: "Terms | ArcLance",
     privacy: "Privacy | ArcLance",
     about: "About | ArcLance",
+    support: "Support | ArcLance",
     contact: "Contact | ArcLance",
     clients: "How to pay an invoice | ArcLance",
     roadmap: "Roadmap | ArcLance"

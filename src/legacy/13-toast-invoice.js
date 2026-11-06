@@ -187,27 +187,7 @@ function copyPayLink() {
   navigator.clipboard.writeText(text).then(()=>showToast('Payment link copied!')).catch(()=>showToast('Copy failed'));
 }
 
-function shareViaWhatsApp() {
-  const client = document.getElementById('inv-client')?.value?.trim() || 'Client';
-  const yourName = document.getElementById('inv-your-name')?.value?.trim() || 'Freelancer';
-  const invNumber = document.getElementById('inv-number')?.value?.trim() || 'INV-001';
-  const amount = document.getElementById('inv-amount')?.value || '0';
-  const desc = document.getElementById('inv-desc')?.value?.trim() || 'Services';
-  const due = document.getElementById('inv-due')?.value || '';
-  const link = document.getElementById('inv-link-text')?.textContent || '';
-  if (link === 'Name not registered') {
-    showToast('Name not registered');
-    return;
-  }
-  
-  let msgText = `Hi ${client},\n\nThis is ${yourName}. Please find the invoice details below:\n\nInvoice #: ${invNumber}\nService: ${desc}\nAmount: ${amount} USDC`;
-  if (due) {
-    msgText += `\nDue Date: ${formatDue(due)}`;
-  }
-  msgText += `\n\nPay here: ${link}\n\nThank you!\nPowered by ArcLance — Borderless Payments on Arc Network`;
-  
-  window.open('https://wa.me/?text=' + encodeURIComponent(msgText), '_blank');
-}
+
 
 /* ══════════════════════════════════════
    PDF INVOICE DOWNLOAD
@@ -475,4 +455,4 @@ function downloadInvoicePDF() {
 }
 
 
-publish({ activeToasts, showToast, LocalRates, formatLocal, updateLocalCurrencies, updateInvLocalCurrency, updatePayLinkPreview, copyPayLink, shareViaWhatsApp, downloadInvoicePDF });
+publish({ activeToasts, showToast, LocalRates, formatLocal, updateLocalCurrencies, updateInvLocalCurrency, updatePayLinkPreview, copyPayLink, downloadInvoicePDF });
