@@ -57,7 +57,7 @@ test('flags stay next to local-currency labels', () => {
 
 test('hero, cards and docs use the agreed wording', () => {
   assert.match(rawHtml, /Get paid in USDC\.<br><span[^>]*>Settled in seconds\.<\/span>/);
-  assert.ok(rawHtml.includes("A payment page for freelancers who can't use PayPal or Payoneer. Works in any country where you can hold a wallet."));
+  assert.ok(rawHtml.includes("Fast payouts, low fees, and no bank or KYC friction. If you have a wallet, you can get paid."));
   assert.ok(rawHtml.includes('ArcLance never holds your funds. Note that USDC itself is issued by Circle and can be blacklisted by the issuer.'));
   assert.ok(rawHtml.includes('reserves are attested by independent accountants') || rawHtml.includes('Reserves are attested by independent accountants'));
   const fast = rawHtml.slice(rawHtml.indexOf('Fast Settlement'), rawHtml.indexOf('Fast Settlement') + 400);
