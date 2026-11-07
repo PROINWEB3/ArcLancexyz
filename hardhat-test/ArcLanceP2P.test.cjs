@@ -254,6 +254,19 @@ describe('ArcLanceP2P', () => {
       expect((await p2p.getAd(0)).remaining).to.equal(USDC(500));
     });
 
+    it('paid order cannot be cancelled by expiry', async () => {
+      const ctx = await loadFixture(deployFixture);
+      const { p2p, seller, buyer, stranger } = ctx;
+      await sellAd(ctx);
+      await p2p.connect(buyer).createOrder(0, USDC(50));
+      await p2p.connect(buyer).markPaid(0, 'ref-123');
+      await time.increase(30 * 60 + 1);
+      await expect(p2p.connect(stranger).cancelOrder(0)).to.be.revertedWithCustomError(p2p, 'InvalidStatus');
+      await expect(p2p.connect(buyer).cancelOrder(0)).to.be.revertedWithCustomError(p2p, 'InvalidStatus');
+      await expect(p2p.connect(seller).cancelOrder(0)).to.be.revertedWithCustomError(p2p, 'InvalidStatus');
+      expect((await p2p.getOrder(0)).status).to.equal(O.Paid);
+    });
+
     it('buy ad: funds go straight back to the seller when the buyer never pays', async () => {
       const ctx = await loadFixture(deployFixture);
       const { p2p, usdc, seller, buyer, stranger } = ctx;
