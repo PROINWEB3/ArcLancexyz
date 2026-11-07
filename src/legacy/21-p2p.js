@@ -93,9 +93,17 @@ async function openOrder(id) {
 
 function startTimer() {
   clearInterval(p.timer);
+  if (!p.order || p.order.status !== 0) return;
+  if (p.order.expiresAt <= Math.floor(Date.now() / 1000)) return;
   p.timer = setInterval(() => {
     const el = $('p2p-countdown');
-    if (!el || !p.order) { clearInterval(p.timer); return; }
+    if (!el || !p.order || p.order.status !== 0) { clearInterval(p.timer); return; }
+    const s = p.order.expiresAt - Math.floor(Date.now() / 1000);
+    if (s <= 0) {
+      clearInterval(p.timer);
+      render();
+      return;
+    }
     el.textContent = countdown(p.order.expiresAt);
   }, 1000);
 }
@@ -240,10 +248,13 @@ function ordersHtml() {
   else if (p.loading) body = loadingState('Loading orders…');
   else if (p.ordersErr) body = errorState(p.ordersErr, 'window.ALP2P.reload()');
   else if (!p.orders) body = loadingState();
-  else body = p.orders.length ? p.orders.map((o) => `<div class="tx-row" data-p-open="${o.id}" style="cursor:pointer;gap:12px">
+  else body = p.orders.length ? p.orders.map((o) => {
+    const expired = o.status === 0 && o.expiresAt <= Math.floor(Date.now() / 1000);
+    return `<div class="tx-row" data-p-open="${o.id}" style="cursor:pointer;gap:12px">
       ${tokIcon('USDC', 26)}<div style="flex:1"><div style="font-size:13px;font-weight:600">Order #${o.id} · ${fromUnits(o.amount, 6, 2)} USDC</div>
       <div style="font-size:11px;color:var(--text2)">${lc(me()) === lc(o.buyer) ? 'You are buying' : 'You are selling'} · ${new Date(o.createdAt * 1000).toLocaleString()}</div></div>
-      ${statusBadge(o.status === 2 ? 'ok' : o.status === 3 ? 'info' : o.status === 4 ? 'fail' : 'pending', ORDER_STATUS[o.status] || '?')}</div>`).join('') : emptyState('You have no orders yet');
+      ${expired ? statusBadge('fail', 'Expired') : statusBadge(o.status === 2 ? 'ok' : o.status === 3 ? 'info' : o.status === 4 ? 'fail' : 'pending', ORDER_STATUS[o.status] || '?')}</div>`;
+  }).join('') : emptyState('You have no orders yet');
   return `${tabsHtml()}${body}${msgHtml()}`;
 }
 
@@ -273,8 +284,8 @@ function orderHtml() {
   const s = o.status;
   const timeline = [
     step('done', 1, 'Order created', `${new Date(o.createdAt * 1000).toLocaleString()} · ${fromUnits(o.amount, 6, 2)} USDC locked`),
-    step(s >= 1 && s !== 3 ? 'done' : s === 0 ? 'active' : 'pending', 2, 'Buyer pays and marks "Paid"', s === 0 ? `Time left: <b id="p2p-countdown">${countdown(o.expiresAt)}</b>` : o.paidAt ? new Date(o.paidAt * 1000).toLocaleString() : ''),
-    step(s === 2 ? 'done' : s === 1 ? 'active' : 'pending', 3, 'Seller confirms and USDC is released', s === 2 ? 'USDC released to the buyer.' : s === 1 ? 'Waiting for the seller.' : ''),
+    step(s >= 1 && s !== 3 ? 'done' : s === 0 ? 'active' : 'pending', 2, 'Buyer pays and marks "Paid"', s === 0 ? (expired ? 'The payment window ended. You can cancel this order and the locked USDC returns to the seller\'s ad.' : `Time left: <b id="p2p-countdown">${countdown(o.expiresAt)}</b>`) : o.paidAt ? new Date(o.paidAt * 1000).toLocaleString() : 'Paid'),
+    step(s === 2 ? 'done' : s === 1 ? 'active' : 'pending', 3, 'Seller confirms and USDC is released', s === 2 ? 'USDC released to the buyer.' : s === 1 ? 'Waiting for the seller to confirm. If there is a problem, open a dispute.' : ''),
   ].join('');
   const btn = (label, attr, cls = 'btn-primary') => `<button type="button" class="btn ${cls}" ${attr} ${p.busy ? 'disabled' : ''}>${label}</button>`;
   let actions = '';
@@ -283,7 +294,8 @@ function orderHtml() {
   if ((s === 0 && (isBuyer || expired)) ) actions += btn(expired ? 'Cancel expired order' : 'Cancel order', 'data-p-cancel="1"', 'btn-ghost') + ' ';
   if (s === 1 && (isBuyer || isSeller)) actions += btn('Dispute', 'data-p-dispute="1"', 'btn-ghost');
   const stat = p.stats[lc(a.owner)];
-  return `<div class="section-header"><div class="section-title">Order #${o.id}</div>${statusBadge(s === 2 ? 'ok' : s === 3 ? 'info' : s === 4 ? 'fail' : 'pending', ORDER_STATUS[s] || '?')}</div>
+  const badge = (s === 0 && expired) ? statusBadge('fail', 'Expired') : statusBadge(s === 2 ? 'ok' : s === 3 ? 'info' : s === 4 ? 'fail' : 'pending', ORDER_STATUS[s] || '?');
+  return `<div class="section-header"><div class="section-title">Order #${o.id}</div>${badge}</div>
     <div class="info-box" style="margin-bottom:14px">
       <div class="info-row"><span class="k">${isBuyer ? 'You buy' : 'You sell'}</span><span class="v yellow">${fromUnits(o.amount, 6, 2)} USDC</span></div>
       <div class="info-row"><span class="k">${isBuyer ? 'You pay' : 'You receive'}</span><span class="v">${fiatText(o.fiatAmount)} ${esc(a.currency)}</span></div>
