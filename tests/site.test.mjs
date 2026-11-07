@@ -794,3 +794,86 @@ test('pay link creator and receive tab: verified with connected wallet and with 
 });
 test('username fee check', () => { const src = fs.readFileSync(path.join(ROOT, 'src/legacy/16-rates-username.js'), 'utf8'); assert.ok(!src.includes('-0.05 USDC') && !src.includes('const fee = 0.05'));
 });
+
+test('history CSV export: exports correct columns, protects against formula injection and quotes special characters', async () => {
+  const t = await mount();
+  const txs = [
+    {
+      timestamp: '2026-11-06T12:00:00.000Z',
+      type: 'send',
+      amount: '15.5',
+      token: 'USDC',
+      to: '0x1111222233334444555566667777888899990000',
+      label: '=1+2',
+      hash: '0x' + 'aa'.repeat(32),
+      status: 'confirmed'
+    },
+    {
+      timestamp: '2026-11-06T13:00:00.000Z',
+      type: 'send',
+      amount: '20',
+      token: 'USDC',
+      to: '0x2222333344445555666677778888999900001111',
+      label: 'Acme, Inc. "Design" Work',
+      hash: '0x' + 'bb'.repeat(32),
+      status: 'confirmed'
+    },
+    {
+      timestamp: '2026-11-06T14:00:00.000Z',
+      type: 'send',
+      label: '+bonus',
+      status: 'pending'
+    }
+  ];
+  for (const tx of txs) {
+    t.W.WalletState.addTx(tx);
+  }
+
+  let exportedBlob;
+  t.W.URL.createObjectURL = (b) => { exportedBlob = b; return 'blob:test'; };
+  t.W.URL.revokeObjectURL = () => {};
+  let filename = '';
+  t.W.HTMLAnchorElement.prototype.click = function () { filename = this.download; };
+
+  t.W.exportHistoryCSV();
+
+  assert.match(filename, /^arclance-history-\d{4}-\d\d-\d\d\.csv$/);
+  assert.ok(exportedBlob, 'Blob was created');
+
+  const text = await new Promise((res) => {
+    const r = new t.W.FileReader();
+    r.onload = () => res(r.result);
+    r.readAsText(exportedBlob);
+  });
+
+  const lines = text.trim().split(/\r?\n/);
+  assert.equal(lines[0], 'date,direction,amount,token,counterparty,label,tx hash,status');
+
+  assert.ok(lines.some(l => l.includes("'=1+2")), 'neutralizes leading = with leading apostrophe');
+  assert.ok(lines.some(l => l.includes('0x1111222233334444555566667777888899990000')), 'includes full counterparty address');
+  assert.ok(lines.some(l => l.includes('"Acme, Inc. ""Design"" Work"')), 'quotes cells with commas and doubles quotes');
+  assert.ok(lines.some(l => l.includes("'+bonus")), 'neutralizes leading + with leading apostrophe');
+});
+
+test('receipt escaping: user-written label and values are HTML escaped', async () => {
+  const t = await mount();
+  const maliciousLabel = '<img src=x onerror=alert(1)> & "testing"';
+  t.W.showReceipt(
+    '0x' + 'cc'.repeat(32),
+    '50',
+    'USDC',
+    OTHER,
+    Date.now(),
+    ME,
+    maliciousLabel
+  );
+
+  const modal = t.D.getElementById('receiptModal');
+  assert.ok(modal.classList.contains('visible'));
+
+  const labelEl = t.D.getElementById('rec-label');
+  assert.ok(labelEl, 'rec-label element exists');
+  assert.ok(!modal.innerHTML.includes('<img src=x onerror=alert(1)>'), 'HTML tag is escaped, not injected directly');
+  assert.ok(modal.innerHTML.includes('&lt;img src=x onerror=alert(1)&gt;'), 'HTML special characters are escaped');
+  assert.equal(labelEl.textContent, maliciousLabel, 'textContent shows original string');
+});

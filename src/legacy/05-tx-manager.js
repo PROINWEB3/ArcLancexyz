@@ -296,9 +296,20 @@ const TxManager = (() => {
       });
 
       _setState('sendPayBtn','sendPayBtnContent','submitted',base);
-      WalletState.addTx({ id: txHash, type: 'send', label: `Sent ${amount} ${token} to ${recipient.slice(0,6)}...${recipient.slice(-4)}`, timestamp: new Date().toISOString(), display: `-${amount.toFixed(2)} ${token}` });
+      WalletState.addTx({
+        id: txHash,
+        type: 'send',
+        label: `Sent ${amount} ${token} to ${recipient.slice(0,6)}...${recipient.slice(-4)}`,
+        timestamp: new Date().toISOString(),
+        display: `-${amount.toFixed(2)} ${token}`,
+        to: recipient,
+        hash: txHash,
+        amount,
+        token,
+        status: 'confirmed'
+      });
       _setState('sendPayBtn','sendPayBtnContent','confirmed',base);
-      trackTxToast(txHash, `Send ${amount} ${token}`, { receipt: { amount, token, sender: WalletState.getAddr(), recipient } });
+      trackTxToast(txHash, `Send ${amount} ${token}`, { receipt: { amount, token, sender: WalletState.getAddr(), recipient, label: `Send ${amount} ${token}` } });
       WalletState.triggerChainSync(txHash);
     } catch(e) {
       _setState('sendPayBtn','sendPayBtnContent','failed',base);
@@ -436,10 +447,10 @@ const TxManager = (() => {
         const row = WalletState.getTxHistory().find((t) => t.hash === txHash); if (row) row.status = 'failed';
         WalletState.save(); UISync.refreshInvoices(); UISync.refreshHistory();
       };
-      trackTxToast(txHash, `Invoice ${inv.number} payment`, { receipt: { amount, token: 'USDC', sender: WalletState.getAddr(), recipient }, onRetry: () => payInvoice(idx), onFail: () => { reverted = true; if (recorded) undo(); } });
+      trackTxToast(txHash, `Invoice ${inv.number} payment`, { receipt: { amount, token: 'USDC', sender: WalletState.getAddr(), recipient, label: `Invoice ${inv.number} payment` }, onRetry: () => payInvoice(idx), onFail: () => { reverted = true; if (recorded) undo(); } });
       await delay(1000);
       inv.status = 'paid';
-      WalletState.addTx({ type:'send', label:`Invoice ${inv.number} payment`, display:`-${amount} USDC`, to: recipient, hash: txHash, status:'confirmed' });
+      WalletState.addTx({ type:'send', label:`Invoice ${inv.number} payment`, display:`-${amount} USDC`, to: recipient, hash: txHash, amount, token: 'USDC', status:'confirmed' });
       UISync.refreshInvoices();
       recorded = true; if (reverted) undo();
       WalletState.triggerChainSync(txHash);

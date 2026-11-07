@@ -150,7 +150,7 @@ function trackTxToast(hash, label = 'Transaction', opts = {}) {
     if (opts.receipt && typeof window.showReceipt === 'function') {
       const when = await getBlockTimestampMs(ARC.rpcUrl, r.blockNumber);
       const rc = opts.receipt;
-      actions.push({ label: 'View receipt', onClick: () => window.showReceipt(hash, rc.amount, rc.token, rc.recipient, when, rc.sender) });
+      actions.push({ label: 'View receipt', onClick: () => window.showReceipt(hash, rc.amount, rc.token, rc.recipient, when, rc.sender, rc.label) });
     }
     showToast(`${label}: confirmed`, actions);
   }).catch(() => showToast(`${label}: status unknown. Check Arcscan.`, link));

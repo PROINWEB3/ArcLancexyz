@@ -257,7 +257,7 @@ const UISync = (() => {
           ${tx.hash ? `<a href="${arcAltTxUrl(tx.hash)}" target="_blank" class="mono-small" style="color:var(--yellow);text-decoration:underline">${tx.hash.slice(0,6)+'...'+tx.hash.slice(-4)}</a>` : '<div class="mono-small">0x—</div>'}
         </td>
         <td><div class="mono-small">${tx.to ? tx.to.slice(0,6)+'...'+tx.to.slice(-4) : (tx.type ? tx.type.toUpperCase() : '—')}</div></td>
-        <td>${tx.display}</td>
+        <td>${tx.display || '—'}</td>
         <td class="green">✓ Confirmed</td>
       </tr>`).join('')}</tbody>
     </table>`;
