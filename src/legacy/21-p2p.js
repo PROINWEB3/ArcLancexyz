@@ -204,6 +204,11 @@ function createAdFlow() {
   if (!f.methods) errs.push('Choose at least one payment method.');
   if (f.details.trim().length < 3) errs.push('Add payment details for the buyer.');
   if (errs.length) { setMsg(errs[0], 'error'); return; }
+  const amtFormatted = fromUnits(amount, 6, 2);
+  const confirmMsg = f.side === 0
+    ? `This locks ${amtFormatted} USDC in the contract until the ad is cancelled or filled.`
+    : `This publishes your ad to buy ${amtFormatted} USDC.`;
+  if (typeof window.confirm === 'function' && !window.confirm(confirmMsg)) return;
   act('Preparing…', async () => {
     if (f.side === 0 && !(await ensureAllowance(amount, 'Step 1 of 2:'))) return;
     const input = { side: f.side, currency: getCountry(f.country).currency, amount, price, minLimit: min, maxLimit: max, paymentMethods: f.methods, paymentWindowMinutes: Number(f.window), paymentDetails: f.details.trim() };
@@ -216,6 +221,11 @@ function createAdFlow() {
 function takeOrderFlow() {
   const ad = p.takeAd; const amount = toUnits(p.takeAmount, 6);
   if (!(amount > 0n) || amount < ad.minLimit || amount > ad.maxLimit || amount > ad.remaining) { setMsg(`Enter an amount between ${fromUnits(ad.minLimit, 6)} and ${fromUnits(ad.maxLimit < ad.remaining ? ad.maxLimit : ad.remaining, 6)} USDC.`, 'error'); return; }
+  const amtFormatted = fromUnits(amount, 6, 2);
+  const confirmMsg = ad.side === 1
+    ? `This locks ${amtFormatted} USDC in the contract until the buyer pays or the order is cancelled.`
+    : `This creates an order for ${amtFormatted} USDC. You will pay the seller in local currency within ${ad.paymentWindowMinutes} minutes.`;
+  if (typeof window.confirm === 'function' && !window.confirm(confirmMsg)) return;
   act('Preparing…', async () => {
     // Taking a BUY ad means you are the seller, so your USDC is locked now
     if (ad.side === 1 && !(await ensureAllowance(amount, 'Step 1 of 2:'))) return;
@@ -386,17 +396,35 @@ function bind() {
     else if (d.pCountry) { p.country = d.pCountry; p.method = 0; render(); }
     else if (d.pTake) { if (!WalletState.connected()) { WalletManager.openModal(); return; } p.takeAd = p.ads.find((a) => a.id === d.pTake); p.takeAmount = ''; p.msg = ''; render(); }
     else if (d.pCanceltake) { p.takeAd = null; render(); }
-    else if (d.pCancelad) { act('Preparing…', async () => { p.lastTx = await runArcTx(P2P_ADDRESS, encodeCall(P2P_ABI, 'cancelAd', [BigInt(d.pCancelad)]), (t) => setMsg(t)); setMsg('Ad cancelled. Any USDC still locked in it was returned to you.', 'ok'); WalletState.triggerChainSync(); await loadAds(); }); }
+    else if (d.pCancelad) {
+      if (typeof window.confirm === 'function' && !window.confirm('This cancels your ad and returns any remaining USDC locked in it to your wallet.')) return;
+      act('Preparing…', async () => { p.lastTx = await runArcTx(P2P_ADDRESS, encodeCall(P2P_ABI, 'cancelAd', [BigInt(d.pCancelad)]), (t) => setMsg(t)); setMsg('Ad cancelled. Any USDC still locked in it was returned to you.', 'ok'); WalletState.triggerChainSync(); await loadAds(); });
+    }
     else if (d.pConfirmtake) takeOrderFlow();
     else if (d.pOpen) openOrder(d.pOpen);
     else if (d.pFside) { p.form.side = Number(d.pFside); render(); }
     else if (d.pFcountry) { p.form.country = d.pFcountry; p.form.methods = 1; render(); }
     else if (d.pFwin) { p.form.window = d.pFwin; render(); }
     else if (d.pPublish) { if (!WalletState.connected()) WalletManager.openModal(); else createAdFlow(); }
-    else if (d.pPaid) { const ref = ($('p2p-ref')?.value || '').trim() || `ARCLANCE-${p.order.id}`; orderAction('markPaid', [BigInt(p.order.id), ref], 'Payment marked on-chain. The seller must open the page to confirm.'); }
-    else if (d.pConfirm) orderAction('confirmPayment', [BigInt(p.order.id)], 'Payment confirmed. USDC released to the buyer.');
-    else if (d.pCancel) orderAction('cancelOrder', [BigInt(p.order.id)], 'Order cancelled.');
-    else if (d.pDispute) { const reason = window.prompt('Why are you opening a dispute?'); if (reason && reason.trim()) orderAction('openDispute', [BigInt(p.order.id), reason.trim()], 'Dispute opened.'); }
+    else if (d.pPaid) {
+      if (typeof window.confirm === 'function' && !window.confirm('This marks the order as paid on-chain. Only continue if you have already sent the payment.')) return;
+      const ref = ($('p2p-ref')?.value || '').trim() || `ARCLANCE-${p.order.id}`;
+      orderAction('markPaid', [BigInt(p.order.id), ref], 'Payment marked on-chain. The seller must open the page to confirm.');
+    }
+    else if (d.pConfirm) {
+      const amt = fromUnits(p.order.amount, 6, 2);
+      if (typeof window.confirm === 'function' && !window.confirm(`This releases ${amt} USDC to the buyer. Only continue after you see the money in your account.`)) return;
+      orderAction('confirmPayment', [BigInt(p.order.id)], 'Payment confirmed. USDC released to the buyer.');
+    }
+    else if (d.pCancel) {
+      if (typeof window.confirm === 'function' && !window.confirm("This cancels the order and the locked USDC returns to the seller or the seller's ad.")) return;
+      orderAction('cancelOrder', [BigInt(p.order.id)], 'Order cancelled.');
+    }
+    else if (d.pDispute) {
+      if (typeof window.confirm === 'function' && !window.confirm('This opens a dispute. The arbiter will review and decide who receives the USDC.')) return;
+      const reason = window.prompt('Why are you opening a dispute?');
+      if (reason && reason.trim()) orderAction('openDispute', [BigInt(p.order.id), reason.trim()], 'Dispute opened.');
+    }
     else if (d.pResolve) {
       if (typeof window.confirm === 'function' && !window.confirm('You are deciding this dispute. This cannot be undone.')) return;
       const toBuyer = d.pResolve === 'buyer';
