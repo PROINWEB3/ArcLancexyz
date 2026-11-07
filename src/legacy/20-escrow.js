@@ -109,6 +109,8 @@ async function createEscrowFlow() {
   const { errs, total } = validateForm();
   if (errs.length) { setMsg(errs[0], 'error'); return; }
   const f = es.form;
+  const totalFormatted = fromUnits(total, dec(f.token), 2);
+  if (typeof window.confirm === 'function' && !window.confirm(`This deposits ${totalFormatted} ${f.token} into the escrow contract. Funds are locked until you approve and release each milestone.`)) return;
   await act('Checking allowance…', async () => {
     const token = ARC.tokens[f.token];
     const allowance = await allowanceOf(token, ESCROW_ADDRESS);
@@ -258,10 +260,27 @@ function bind() {
     else if (d.esAdd) { if (es.form.milestones.length < MAX_MILESTONES) es.form.milestones.push({ amount: '', description: '' }); render(); }
     else if (d.esRm) { es.form.milestones.splice(Number(d.esRm), 1); render(); }
     else if (d.esCreate) { if (!WalletState.connected()) WalletManager.openModal(); else createEscrowFlow(); }
-    else if (d.esDeliver !== undefined) submitMilestoneAction('markDelivered', Number(d.esDeliver), [($(`es-note-${d.esDeliver}`)?.value || '').trim()], 'Marked as delivered.');
-    else if (d.esApprove !== undefined) submitMilestoneAction('approveMilestone', Number(d.esApprove), [], 'Milestone approved.');
-    else if (d.esRelease !== undefined) submitMilestoneAction('releaseMilestone', Number(d.esRelease), [], 'Payment released to the freelancer.');
-    else if (d.esDispute !== undefined) { const reason = window.prompt('Why are you opening a dispute?'); if (reason && reason.trim()) submitMilestoneAction('disputeMilestone', Number(d.esDispute), [reason.trim()], 'Dispute opened.'); }
+    else if (d.esDeliver !== undefined) {
+      if (typeof window.confirm === 'function' && !window.confirm('This marks the milestone as delivered for the client to review.')) return;
+      submitMilestoneAction('markDelivered', Number(d.esDeliver), [($(`es-note-${d.esDeliver}`)?.value || '').trim()], 'Marked as delivered.');
+    }
+    else if (d.esApprove !== undefined) {
+      if (typeof window.confirm === 'function' && !window.confirm('This approves the milestone. Once approved, payment can be released to the freelancer.')) return;
+      submitMilestoneAction('approveMilestone', Number(d.esApprove), [], 'Milestone approved.');
+    }
+    else if (d.esRelease !== undefined) {
+      const idx = Number(d.esRelease);
+      const sym = tokenSymbol(es.detail?.token);
+      const m = es.detail?.milestones?.[idx];
+      const amt = m ? `${fromUnits(m.amount, dec(sym), 2)} ` : '';
+      if (typeof window.confirm === 'function' && !window.confirm(`This releases ${amt}${sym} to the freelancer. This cannot be undone.`)) return;
+      submitMilestoneAction('releaseMilestone', idx, [], 'Payment released to the freelancer.');
+    }
+    else if (d.esDispute !== undefined) {
+      if (typeof window.confirm === 'function' && !window.confirm('This opens a dispute on this milestone. The arbiter will review and resolve the funds.')) return;
+      const reason = window.prompt('Why are you opening a dispute?');
+      if (reason && reason.trim()) submitMilestoneAction('disputeMilestone', Number(d.esDispute), [reason.trim()], 'Dispute opened.');
+    }
   });
   root.addEventListener('input', (e) => {
     const t = e.target; const d = t.dataset;
