@@ -3,25 +3,38 @@
 import { publish } from './publish.js';
 import { buildPayLink } from './lib-paylink.js';
 import { ARC, arcAltTxUrl } from '../config/chain-config';
+import { esc } from './lib-ui.js';
 // ==========================================
 // 1. PAYMENT RECEIPT FUNCTIONS
 // ==========================================
 let currentReceiptData = null;
 
 // timestamp: confirmed block time in ms. Any value the caller does not have is shown as "Not available" (never a placeholder).
-// sender is kept with the receipt data; the receipt layout has no sender row.
 const NA = 'Not available';
-window.showReceipt = function(txHash, amount, token, recipient, timestamp, sender) {
+window.showReceipt = function(txHash, amount, token, recipient, timestamp, sender, label) {
   const has = (v) => v !== undefined && v !== null && String(v).trim() !== '';
   const dateStr = Number(timestamp) > 0 ? new Date(Number(timestamp)).toLocaleString() : NA;
   const amountStr = has(amount) && has(token) ? `${amount} ${token}` : NA;
   const recipientStr = has(recipient) ? String(recipient) : NA;
-  currentReceiptData = { txHash: has(txHash) ? txHash : NA, amount: has(amount) ? amount : NA, token: has(token) ? token : '', recipient: recipientStr, sender: has(sender) ? sender : NA, date: dateStr };
+  const senderStr = has(sender) ? String(sender) : NA;
+  const labelStr = has(label) ? String(label) : NA;
+  currentReceiptData = { txHash: has(txHash) ? txHash : NA, amount: has(amount) ? amount : NA, token: has(token) ? token : '', recipient: recipientStr, sender: senderStr, date: dateStr, label: labelStr };
 
   document.getElementById('rec-amount').textContent = amountStr;
   const to = document.getElementById('rec-to');
-  to.textContent = recipientStr === NA ? NA : recipientStr.slice(0,8) + '...' + recipientStr.slice(-6);
+  to.textContent = recipientStr === NA ? NA : (recipientStr.length > 14 ? recipientStr.slice(0,8) + '...' + recipientStr.slice(-6) : recipientStr);
   to.title = recipientStr;
+
+  const from = document.getElementById('rec-from');
+  if (from) {
+    from.textContent = senderStr === NA ? NA : (senderStr.length > 14 ? senderStr.slice(0,8) + '...' + senderStr.slice(-6) : senderStr);
+    from.title = senderStr;
+  }
+
+  const lbl = document.getElementById('rec-label');
+  if (lbl) {
+    lbl.innerHTML = esc(labelStr);
+  }
 
   const txLink = document.getElementById('rec-tx');
   if (has(txHash)) { txLink.href = arcAltTxUrl(txHash); txLink.textContent = String(txHash).slice(0,10) + '...' + String(txHash).slice(-8); }
@@ -36,67 +49,8 @@ window.closeReceiptModal = function() {
   document.getElementById('receiptModal').classList.remove('visible');
 };
 
-window.downloadHTMLReceipt = function() {
-  if (!currentReceiptData) return;
-  const d = currentReceiptData;
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>ArcLance Payment Receipt</title>
-  <style>
-    body { font-family: sans-serif; background: #08071a; color: #e8e6ff; padding: 40px; text-align: center; }
-    .receipt { max-width: 500px; margin: 0 auto; background: #0d0c22; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    h1 { color: #f5c518; font-size: 24px; margin-bottom: 5px; }
-    .status { color: #00e676; font-weight: bold; margin-bottom: 25px; letter-spacing: 1px; }
-    .row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; }
-    .row:last-child { border-bottom: none; }
-    .label { color: #7a78a0; }
-    .val { font-weight: bold; }
-    .mono { font-family: monospace; font-size: 13px; }
-    .footer { margin-top: 30px; font-size: 12px; color: #7a78a0; }
-  </style>
-</head>
-<body>
-  <div class="receipt">
-    <h1>ArcLance Receipt</h1>
-    <div class="status">SUCCESSFUL</div>
-    <div class="row">
-      <span class="label">Amount Paid</span>
-      <span class="val" style="color:#f5c518; font-size:18px;">${d.amount} ${d.token}</span>
-    </div>
-    <div class="row">
-      <span class="label">Recipient Address</span>
-      <span class="val mono">${d.recipient}</span>
-    </div>
-    <div class="row">
-      <span class="label">Transaction Hash</span>
-      <span class="val mono">${d.txHash}</span>
-    </div>
-    <div class="row">
-      <span class="label">Date & Time</span>
-      <span class="val">${d.date}</span>
-    </div>
-    <div class="row">
-      <span class="label">Network</span>
-      <span class="val">${ARC.name} (Chain ID ${ARC.chainId})</span>
-    </div>
-    <div class="footer">
-      Thank you for using ArcLance Freelancer Payments.
-    </div>
-  </div>
-</body>
-</html>`;
-
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `arclance-receipt-${String(d.txHash).slice(0,8)}.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+window.printReceipt = function() {
+  window.print();
 };
 
 // ==========================================
@@ -333,7 +287,7 @@ window.updateMonthlyStats = function() {
   
   let totalSent = 0;
   thisMonthTxs.forEach(t => {
-    if (t.type === 'send') {
+    if (t.type === 'send' && typeof t.display === 'string') {
       const match = t.display.match(/-?([\d.]+)/);
       if (match) {
         const amt = parseFloat(match[1]) || 0;
@@ -404,4 +358,83 @@ window.exportInvoicesCSV = function() {
 };
 
 
-publish({  });
+// 6. CSV Export Transaction History
+export function formatCsvCell(val) {
+  if (val === undefined || val === null || val === '') return '';
+  let s = String(val);
+  // CSV injection protection: any cell starting with =, +, -, @, \t, \r gets a leading '
+  if (/^[=+\-@\t\r]/.test(s)) {
+    s = "'" + s;
+  }
+  // Quote cells that contain commas, quotes or newlines
+  if (/[",\n\r]/.test(s)) {
+    s = `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+window.formatCsvCell = formatCsvCell;
+
+export function exportHistoryCSV() {
+  const txs = (typeof WalletState !== 'undefined' && WalletState.getTxHistory) ? WalletState.getTxHistory() : [];
+  if (!txs || txs.length === 0) {
+    if (typeof showToast === 'function') showToast('No transactions to export!');
+    return;
+  }
+
+  const headers = ['date', 'direction', 'amount', 'token', 'counterparty', 'label', 'tx hash', 'status'];
+
+  const rows = txs.map((tx) => {
+    let amount = '';
+    if (tx.amount !== undefined && tx.amount !== null && String(tx.amount).trim() !== '') {
+      amount = String(tx.amount);
+    } else if (typeof tx.display === 'string') {
+      const m = tx.display.match(/^[+-]?([\d.]+)/);
+      if (m) amount = m[1];
+    }
+
+    let token = '';
+    if (tx.token !== undefined && tx.token !== null && String(tx.token).trim() !== '') {
+      token = String(tx.token);
+    } else if (typeof tx.display === 'string') {
+      const m = tx.display.match(/[+-]?[\d.]+\s*([A-Za-z]+)/);
+      if (m) token = m[1];
+    }
+
+    let counterparty = '';
+    const rawTo = tx.to || tx.recipient;
+    if (rawTo && typeof rawTo === 'string' && /^0x[0-9a-fA-F]{40}$/.test(rawTo)) {
+      counterparty = rawTo;
+    }
+
+    let txHash = '';
+    if (tx.hash && typeof tx.hash === 'string' && tx.hash.startsWith('0x')) {
+      txHash = tx.hash;
+    }
+
+    return [
+      formatCsvCell(tx.timestamp || ''),
+      formatCsvCell(tx.type || ''),
+      formatCsvCell(amount),
+      formatCsvCell(token),
+      formatCsvCell(counterparty),
+      formatCsvCell(tx.label || ''),
+      formatCsvCell(txHash),
+      formatCsvCell(tx.status || '')
+    ];
+  });
+
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n') + '\r\n';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `arclance-history-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (typeof showToast === 'function') showToast('Exported transaction history to CSV!');
+}
+window.exportHistoryCSV = exportHistoryCSV;
+
+publish({ formatCsvCell, exportHistoryCSV });
