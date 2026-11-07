@@ -1,5 +1,6 @@
 // P2P page: sell or buy USDC for local currency. Reads and writes the contract at P2P_ADDRESS (not deployed yet).
 import { publish } from './publish.js';
+import { parseAbi } from 'viem';
 import { ARC, P2P_ADDRESS, NOT_DEPLOYED_MESSAGE, arcTxUrl } from '../config/chain-config';
 import { esc, $, tokIcon, methodIcon, statusBadge, emptyState, errorState, loadingState } from './lib-ui.js';
 import { toUnits, fromUnits, shortAddress, errorMessage } from '../lib/evm';
@@ -8,12 +9,20 @@ import { P2P_COUNTRIES, P2P_DEMO_NOTICE, getCountry, countryOfCurrency, methodBi
 import { readContract, encodeCall, hasCode } from '../lib/contract';
 import { runArcTx, allowanceOf, approveExact } from './lib-tx.js';
 
+const P2P_FULL_ABI = [
+  ...P2P_ABI,
+  ...parseAbi([
+    'function arbiter() view returns (address)',
+    'function resolveDispute(uint256 orderId, bool releaseToBuyer)',
+  ]),
+];
+
 const p = {
   tab: 'market', side: 'buy', country: 'PK', method: 0, amount: '',
   ads: null, adsErr: '', loading: false, orders: null, ordersErr: '',
   order: null, orderAd: null, orderErr: '', takeAd: null, takeAmount: '',
   deployed: null, busy: false, msg: '', msgKind: 'info', lastTx: '',
-  rates: null, ratesErr: '', stats: {}, timer: null,
+  rates: null, ratesErr: '', stats: {}, timer: null, arbiter: null,
   form: { side: 0, country: 'PK', amount: '', price: '', min: '', max: '', methods: 1, window: '30', details: '' },
 };
 
@@ -111,13 +120,23 @@ async function loadOrders() {
   p.loading = false; render();
 }
 
+async function loadArbiter() {
+  if (p.arbiter !== null) return p.arbiter;
+  if (!P2P_ADDRESS || !(await checkDeployed())) return null;
+  try {
+    const a = await readContract(P2P_ADDRESS, P2P_FULL_ABI, 'arbiter');
+    p.arbiter = lc(a);
+  } catch { p.arbiter = ''; }
+  return p.arbiter;
+}
+
 async function openOrder(id) {
   p.stats = {};
   p.tab = 'order'; p.order = null; p.orderErr = ''; p.msg = ''; p.lastTx = ''; render();
   try {
     p.order = normOrder(id, await readContract(P2P_ADDRESS, P2P_ABI, 'getOrder', [BigInt(id)]));
     p.orderAd = normAd(p.order.adId, await readContract(P2P_ADDRESS, P2P_ABI, 'getAd', [BigInt(p.order.adId)]));
-    await loadStats(p.orderAd.owner);
+    await Promise.all([loadStats(p.orderAd.owner), loadArbiter()]);
   } catch (e) { p.orderErr = errorMessage(e); }
   render(); startTimer();
 }
@@ -209,7 +228,7 @@ function takeOrderFlow() {
 }
 
 const orderAction = (fn, args, okText) => act('Preparing…', async () => {
-  p.lastTx = await runArcTx(P2P_ADDRESS, encodeCall(P2P_ABI, fn, args), (t) => setMsg(t));
+  p.lastTx = await runArcTx(P2P_ADDRESS, encodeCall(P2P_FULL_ABI, fn, args), (t) => setMsg(t));
   setMsg(okText, 'ok'); WalletState.triggerChainSync(); await openOrderQuiet(p.order.id);
 });
 async function openOrderQuiet(id) {
@@ -312,6 +331,7 @@ function orderHtml() {
   const o = p.order; const a = p.orderAd;
   if (!o || !a) return loadingState('Loading order…');
   const isBuyer = lc(me()) === lc(o.buyer); const isSeller = lc(me()) === lc(o.seller);
+  const isArbiter = !!p.arbiter && lc(me()) === lc(p.arbiter);
   const expired = o.status === 0 && o.expiresAt <= Math.floor(Date.now() / 1000);
   const step = (state, n, t, d) => `<div class="tracker-step ${state}"><div class="tracker-step-dot">${state === 'done' ? '✓' : n}</div><div><div style="font-size:13px;font-weight:700">${t}</div><div style="font-size:11px;color:var(--text2)">${d}</div></div></div>`;
   const s = o.status;
@@ -326,8 +346,12 @@ function orderHtml() {
   if (s === 1 && isSeller) actions += btn('Confirm payment received', 'data-p-confirm="1"') + ' ';
   if ((s === 0 && (isBuyer || expired)) ) actions += btn(expired ? 'Cancel expired order' : 'Cancel order', 'data-p-cancel="1"', 'btn-ghost') + ' ';
   if (s === 1 && (isBuyer || isSeller)) actions += btn('Dispute', 'data-p-dispute="1"', 'btn-ghost');
+  if (s === 4 && isArbiter) actions += `${btn('Release USDC to buyer', 'data-p-resolve="buyer"')} ${btn('Refund USDC to seller', 'data-p-resolve="seller"', 'btn-ghost')} `;
   const stat = p.stats[lc(a.owner)];
   const badge = (s === 0 && expired) ? statusBadge('fail', 'Expired') : statusBadge(s === 2 ? 'ok' : s === 3 ? 'info' : s === 4 ? 'fail' : 'pending', ORDER_STATUS[s] || '?');
+  const disputeNotice = (s === 4 && !isArbiter) || actions.includes('data-p-dispute')
+    ? `<div style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5">Disputes are decided by a single arbiter address. This is a test deployment.</div>`
+    : '';
   return `<div class="section-header"><div class="section-title">Order #${o.id}</div>${badge}</div>
     <div class="info-box" style="margin-bottom:14px">
       <div class="info-row"><span class="k">${isBuyer ? 'You buy' : 'You sell'}</span><span class="v yellow">${fromUnits(o.amount, 6, 2)} USDC</span></div>
@@ -337,7 +361,7 @@ function orderHtml() {
       <div class="info-row"><span class="k">Payment reference</span><span class="v mono">ARCLANCE-${o.id}</span></div></div>
     ${isBuyer && s <= 1 ? `<div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:14px"><div class="form-label">Payment instructions</div><div style="font-size:13px;white-space:pre-wrap">${esc(a.paymentDetails)}</div><div style="font-size:11px;color:var(--text2);margin-top:6px">Methods: ${esc(methodsText(a.paymentMethods, a.currency).join(', '))}. Put the reference in your payment note.</div>${demoNote()}</div>` : ''}
     ${timeline}${o.paymentReference ? `<div style="font-size:11px;color:var(--text2);margin-top:8px">Buyer reference: ${esc(o.paymentReference)}</div>` : ''}
-    ${actions ? `<div style="margin-top:14px">${actions}</div>` : ''}${actions.includes('data-p-dispute') ? `<div style="font-size:11px;color:var(--text2);margin-top:8px;line-height:1.5">Disputes are decided by a single arbiter address. This is a test deployment.</div>` : ''}${msgHtml()}
+    ${actions ? `<div style="margin-top:14px">${actions}</div>` : ''}${disputeNotice}${msgHtml()}
     <button type="button" class="btn btn-ghost btn-sm" data-p-tab="orders" style="margin-top:14px">Back to orders</button>`;
 }
 
@@ -373,6 +397,11 @@ function bind() {
     else if (d.pConfirm) orderAction('confirmPayment', [BigInt(p.order.id)], 'Payment confirmed. USDC released to the buyer.');
     else if (d.pCancel) orderAction('cancelOrder', [BigInt(p.order.id)], 'Order cancelled.');
     else if (d.pDispute) { const reason = window.prompt('Why are you opening a dispute?'); if (reason && reason.trim()) orderAction('openDispute', [BigInt(p.order.id), reason.trim()], 'Dispute opened.'); }
+    else if (d.pResolve) {
+      if (typeof window.confirm === 'function' && !window.confirm('You are deciding this dispute. This cannot be undone.')) return;
+      const toBuyer = d.pResolve === 'buyer';
+      orderAction('resolveDispute', [BigInt(p.order.id), toBuyer], toBuyer ? 'Dispute resolved. USDC released to the buyer.' : 'Dispute resolved. USDC returned to the seller.');
+    }
   });
   root.addEventListener('change', (e) => {
     const t = e.target;
@@ -395,7 +424,7 @@ window.ALP2P = {
   orderNeedsAction,
 };
 window.AL_pages = window.AL_pages || {};
-window.AL_pages.p2p = async () => { loadRates(); if (await checkDeployed()) { if (p.tab === 'orders') loadOrders(); else if (p.tab === 'market') loadAds(); else if (p.tab === 'order' && p.order) openOrderQuiet(p.order.id); else render(); } else render(); };
+window.AL_pages.p2p = async () => { loadRates(); if (await checkDeployed()) { loadArbiter(); if (p.tab === 'orders') loadOrders(); else if (p.tab === 'market') loadAds(); else if (p.tab === 'order' && p.order) openOrderQuiet(p.order.id); else render(); } else render(); };
 document.addEventListener('DOMContentLoaded', () => { if ($('p2p-root')) { bind(); render(); } });
 
 publish({});
