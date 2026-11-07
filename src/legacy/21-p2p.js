@@ -19,6 +19,37 @@ const p = {
 
 const me = () => WalletState.getAddr();
 const lc = (a) => String(a || '').toLowerCase();
+
+export function orderNeedsAction(o, userAddr = me()) {
+  const addr = lc(userAddr);
+  if (!addr || !o) return false;
+  const s = Number(o.status);
+  if (lc(o.seller) === addr && s === 1) return true;
+  if (lc(o.buyer) === addr && s === 0 && Number(o.expiresAt) > Math.floor(Date.now() / 1000)) return true;
+  return false;
+}
+
+export function actionNeededCount(orders = p.orders, userAddr = me()) {
+  if (!userAddr || !Array.isArray(orders)) return 0;
+  return orders.filter((o) => orderNeedsAction(o, userAddr)).length;
+}
+
+function updateNavBadge(count) {
+  const navItem = document.querySelector('.nav-item[onclick*="\'p2p\'"]');
+  if (!navItem) return;
+  let badge = navItem.querySelector('.p2p-nav-badge');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'badge badge-yellow p2p-nav-badge';
+      badge.style.cssText = 'margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;line-height:1.2';
+      navItem.appendChild(badge);
+    }
+    badge.textContent = String(count);
+  } else if (badge) {
+    badge.remove();
+  }
+}
 const methodsText = (mask, currency) => methodsFromMask(currency, mask);
 const methodChips = (mask, currency) => methodsText(mask, currency).map((m) => `<span class="badge badge-purple" style="font-size:10px;display:inline-flex;align-items:center;gap:5px">${methodIcon(m, 14)}${esc(m)}</span>`).join('');
 const demoNote = () => `<div style="font-size:11px;color:var(--yellow);margin-top:6px">${esc(P2P_DEMO_NOTICE)}</div>`;
@@ -196,8 +227,10 @@ function notDeployed() {
 }
 
 function tabsHtml() {
+  const count = actionNeededCount();
+  const badge = count > 0 ? ` <span class="badge badge-yellow" style="font-size:10px;padding:1px 6px;margin-left:6px;border-radius:10px;${p.tab === 'orders' ? 'background:rgba(0,0,0,0.18);color:#000;' : ''}">${count}</span>` : '';
   const t = (id, label) => `<button type="button" class="slip-btn ${p.tab === id ? 'active' : ''}" data-p-tab="${id}">${label}</button>`;
-  return `<div class="slip-btns" style="margin-bottom:14px">${t('market', 'Marketplace')}${t('orders', 'My orders')}${t('create', 'Create ad')}</div>`;
+  return `<div class="slip-btns" style="margin-bottom:14px">${t('market', 'Marketplace')}${t('orders', `My orders${badge}`)}${t('create', 'Create ad')}</div>`;
 }
 
 function marketHtml() {
@@ -311,9 +344,10 @@ function orderHtml() {
 function render() {
   const root = $('p2p-root');
   if (!root) return;
-  if (p.deployed === false || !P2P_ADDRESS) { root.innerHTML = notDeployed(); return; }
+  if (p.deployed === false || !P2P_ADDRESS) { root.innerHTML = notDeployed(); updateNavBadge(0); return; }
   const inner = p.tab === 'market' ? marketHtml() : p.tab === 'orders' ? ordersHtml() : p.tab === 'create' ? createHtml() : orderHtml();
   root.innerHTML = `<div class="card animate" style="max-width:820px;margin:0 auto;width:100%">${pageHead('P2P')}${inner}</div>`;
+  updateNavBadge(actionNeededCount());
 }
 
 let bound = false;
@@ -354,7 +388,12 @@ function bind() {
   });
 }
 
-window.ALP2P = { reload: () => (p.tab === 'orders' ? loadOrders() : loadAds()), open: (id) => openOrder(id) };
+window.ALP2P = {
+  reload: () => (p.tab === 'orders' ? loadOrders() : loadAds()),
+  open: (id) => openOrder(id),
+  actionCount: (orders, userAddr) => actionNeededCount(orders, userAddr),
+  orderNeedsAction,
+};
 window.AL_pages = window.AL_pages || {};
 window.AL_pages.p2p = async () => { loadRates(); if (await checkDeployed()) { if (p.tab === 'orders') loadOrders(); else if (p.tab === 'market') loadAds(); else if (p.tab === 'order' && p.order) openOrderQuiet(p.order.id); else render(); } else render(); };
 document.addEventListener('DOMContentLoaded', () => { if ($('p2p-root')) { bind(); render(); } });

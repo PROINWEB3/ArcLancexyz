@@ -877,3 +877,23 @@ test('receipt escaping: user-written label and values are HTML escaped', async (
   assert.ok(modal.innerHTML.includes('&lt;img src=x onerror=alert(1)&gt;'), 'HTML special characters are escaped');
   assert.equal(labelEl.textContent, maliciousLabel, 'textContent shows original string');
 });
+
+test('P2P action-needed count logic: seller with Paid order and buyer with unexpired Created order', async () => {
+  const t = await mount();
+  const now = Math.floor(Date.now() / 1000);
+  const orders = [
+    { id: '1', seller: ME, buyer: OTHER, status: 1, expiresAt: now - 100 },
+    { id: '2', seller: ME, buyer: OTHER, status: 0, expiresAt: now + 500 },
+    { id: '3', seller: OTHER, buyer: ME, status: 0, expiresAt: now + 500 },
+    { id: '4', seller: OTHER, buyer: ME, status: 0, expiresAt: now - 10 },
+    { id: '5', seller: OTHER, buyer: ME, status: 1, expiresAt: now + 500 },
+    { id: '6', seller: ME, buyer: OTHER, status: 2, expiresAt: now - 100 },
+    { id: '7', seller: ME, buyer: OTHER, status: 3, expiresAt: now - 100 },
+    { id: '8', seller: ME, buyer: OTHER, status: 4, expiresAt: now - 100 },
+  ];
+  assert.equal(t.W.ALP2P.actionCount(orders, ME), 2);
+  assert.equal(t.W.ALP2P.actionCount(orders, OTHER), 2);
+  assert.equal(t.W.ALP2P.actionCount(orders, '0x1111111111111111111111111111111111111111'), 0);
+  assert.equal(t.W.ALP2P.actionCount([], ME), 0);
+  assert.equal(t.W.ALP2P.actionCount(null, ME), 0);
+});
