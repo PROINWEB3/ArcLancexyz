@@ -72,7 +72,17 @@ const UISync = (() => {
     setEl('gateway-bal-base', peerLabel(basePeer));
     setEl('gateway-unified-total', fmtUSD(unifiedTotal) + ' USDC');
 
-    if (WalletState.connected()) {
+    const isConnected = WalletState.connected();
+    const guestSteps = document.getElementById('home-guest-steps');
+    const homeStats = document.getElementById('home-stat-cards');
+    const homePortfolio = document.getElementById('home-portfolio-card');
+    const multiChainCard = document.getElementById('multiChainBalanceCard');
+    if (guestSteps) guestSteps.style.display = isConnected ? 'none' : '';
+    if (homeStats) homeStats.style.display = isConnected ? '' : 'none';
+    if (homePortfolio) homePortfolio.style.display = isConnected ? '' : 'none';
+    if (multiChainCard) multiChainCard.style.display = isConnected ? '' : 'none';
+
+    if (isConnected) {
       setEl('portfolio-sub', `${fmt(usdc,2)} USDC · ${onChainTxs} on-chain txs · Arc Testnet`);
     } else {
       setEl('portfolio-sub', 'Connect wallet to view balances');

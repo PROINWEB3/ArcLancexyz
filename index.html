@@ -55,7 +55,7 @@
     <div class="wm-error-banner" id="wmError"><span><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span id="wmErrorText"></span></div>
     <div class="wm-error-banner" id="wmNoWalletWarn" style="display:none;background:rgba(245,197,24,0.07);border-color:rgba(245,197,24,0.2);color:var(--yellow)">
       <span><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
-      <span>No wallet extension detected. Install <a href="https://metamask.io" target="_blank" style="color:var(--yellow);font-weight:700">MetaMask</a> or <a href="https://rabby.io" target="_blank" style="color:var(--yellow);font-weight:700">Rabby</a> then refresh.</span>
+      <span>No wallet detected in this browser. On a phone, open ArcLance inside your wallet app (MetaMask, OKX, Trust or Coinbase Wallet) and tap Connect Wallet there. On a computer, install MetaMask, Rabby or OKX Wallet, then refresh.</span>
     </div>
     <div class="wm-connected-banner" id="wmConnected" style="display:none !important">
       <div class="wm-connected-row">
@@ -158,7 +158,7 @@
               <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--yellow);margin-bottom:8px;display:flex;align-items:center;gap:8px">FREELANCER PAYMENTS</div>
               <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1.25;margin-bottom:6px">Get paid in USDC.<br><span style="color:var(--yellow)">Settled in seconds.</span></div>
               <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
-                <div style="font-size:15px;color:var(--text2)">Fast payouts, low fees, and no bank or KYC friction. If you have a wallet, you can get paid.</div>
+                <div style="font-size:15px;color:var(--text2)">Fast payouts, low fees, and no bank account needed to receive USDC.</div>
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px">
                   <button class="btn btn-primary" onclick="navigate('payments',document.querySelectorAll('.nav-item')[1])">Get started</button>
                   <button class="btn btn-ghost" onclick="navigate('docs',document.querySelectorAll('.nav-item')[10])">Learn more</button>
@@ -170,7 +170,26 @@
           </div>
         </div>
 
-        <div class="grid-4">
+        <div class="card animate" id="home-guest-steps" style="padding:24px 28px">
+          <div class="section-label-sm" style="margin-bottom:14px">HOW IT WORKS (TESTNET DEMO)</div>
+          <div class="grid-3" style="margin-bottom:18px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:4px">1. Create your payment link</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.5">Enter your wallet address, amount, and service description.</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:4px">2. Send it to your client</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.5">Share the link by email or chat. Your client opens it and pays with their own wallet.</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+              <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:4px">3. Get paid in USDC</div>
+              <div style="font-size:12px;color:var(--text2);line-height:1.5">Your client pays USDC directly to your wallet on Arc Testnet.</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="navigate('paylink',document.querySelector('.nav-item[onclick*=paylink]'))">Create your payment link</button>
+        </div>
+
+        <div class="grid-4" id="home-stat-cards" style="display:none">
           <div class="card animate" style="background:linear-gradient(135deg,#110e00,#1a1400);border-color:rgba(245,197,24,0.2)">
             <div class="card-glow" style="background:var(--yellow)"></div>
             <div class="stat-icon" style="background:rgba(245,197,24,0.12);color:var(--yellow)"><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></div>
@@ -203,7 +222,7 @@
 
         <div style="display:grid;grid-template-columns:1fr 340px;gap:18px">
           <div style="display:flex;flex-direction:column;gap:18px">
-            <div class="card animate" style="background:linear-gradient(135deg,#110e00,#120f00,#0d0e1e);border-color:rgba(245,197,24,0.15);padding:30px">
+            <div class="card animate" id="home-portfolio-card" style="display:none;background:linear-gradient(135deg,#110e00,#120f00,#0d0e1e);border-color:rgba(245,197,24,0.15);padding:30px">
               <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 20%,rgba(245,197,24,0.07),transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(108,63,196,0.05),transparent 60%);pointer-events:none"></div>
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
                 <div>
@@ -240,7 +259,7 @@
             </div>
 
             <!-- MULTI-CHAIN BALANCE -->
-            <div class="card animate" id="multiChainBalanceCard" style="background:linear-gradient(135deg,#070d1e,#0a1329,#0d0a20);border-color:rgba(59,130,246,0.25);padding:24px;position:relative;overflow:hidden">
+            <div class="card animate" id="multiChainBalanceCard" style="display:none;background:linear-gradient(135deg,#070d1e,#0a1329,#0d0a20);border-color:rgba(59,130,246,0.25);padding:24px;position:relative;overflow:hidden">
               <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 85% 15%,rgba(59,130,246,0.08),transparent 60%),radial-gradient(ellipse at 15% 85%,rgba(168,85,247,0.05),transparent 60%);pointer-events:none"></div>
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px">
                 <div>
@@ -309,7 +328,7 @@
                 <span style="font-size:28px"><svg class="ui-i ui-i-feature" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
                 <div style="text-align:left">
                   <h4 style="font-size:14px;font-weight:700;color:var(--text);margin:0">Everywhere Else</h4>
-                  <p style="font-size:12px;color:var(--text2);margin:4px 0 0">No bank account or KYC friction required. If you can hold a self-custodial wallet, you can receive USDC and EURC directly. Cashing out to local money depends on the rules in your country.</p>
+                  <p style="font-size:12px;color:var(--text2);margin:4px 0 0">No bank account is needed to receive USDC and EURC. If you can hold a self-custodial wallet, you can get paid. Cashing out to local money usually needs identity checks, and the rules depend on your country. This is not legal or tax advice.</p>
                 </div>
               </div>
             </div>
@@ -347,7 +366,7 @@
                 <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Speed</span><span style="color:var(--yellow);font-weight:700">Seconds</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Network fee</span><span style="color:var(--green);font-weight:700">Flat, paid in USDC</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Platform fee</span><span style="color:var(--yellow);font-weight:700">0% (Free)</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Access</span><span style="color:var(--text);font-weight:700">Worldwide, no KYC</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Access</span><span style="color:var(--text);font-weight:700">Any wallet that supports Arc Testnet</span></div>
               </div>
             </div>
 
@@ -398,7 +417,7 @@
               <button class="pay-tab active" onclick="switchPayTab('send',this)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg> SEND</button>
               <button class="pay-tab" onclick="switchPayTab('receive',this)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></svg> RECEIVE</button>
               <button class="pay-tab" onclick="switchPayTab('username',this)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> USERNAME</button>
-              <button class="pay-tab" onclick="switchPayTab('recurring',this)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> RECURRING</button>
+              <button class="pay-tab" onclick="switchPayTab('recurring',this)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> REMINDERS</button>
               <button class="pay-tab" onclick="switchPayTab('history',this)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg> HISTORY</button>
             </div>
 
@@ -536,7 +555,7 @@
             </div>
 
             <div id="tab-recurring" style="display:none">
-              <div style="color:var(--text2);font-size:13px;margin-bottom:16px">Schedule automatic or recurring stablecoin payments on Arc Network.</div>
+              <div style="color:var(--text2);font-size:13px;margin-bottom:16px">Save reminders for recurring payments. A reminder only: ArcLance does not send payments automatically.</div>
               
               <div class="form-group">
                 <label class="form-label">Recipient Address</label>
@@ -567,13 +586,13 @@
                 </select>
               </div>
               <button class="tx-btn tx-btn-yellow" style="margin-bottom:24px" onclick="scheduleRecurringPayment()">
-                <span><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> SCHEDULE PAYMENT</span>
+                <span><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> SAVE REMINDER</span>
               </button>
               
               <div style="margin-top:20px">
-                <label class="form-label">Scheduled Payments</label>
+                <label class="form-label">Saved Reminders</label>
                 <div id="recurring-payments-list" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-                  <div class="history-empty">No recurring payments scheduled yet</div>
+                  <div class="history-empty">No reminders saved yet</div>
                 </div>
               </div>
             </div>
@@ -678,11 +697,11 @@
               <div style="display:flex;align-items:center;justify-content:space-between">
                 <div>
                   <div style="font-weight:700;font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px">
-                    <span><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span> Escrow Protection
-                    <span class="badge badge-yellow" style="font-size:10px">Tag only</span>
+                    <span><svg class="ui-i" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span> Escrow note
+                    <span class="badge badge-yellow" style="font-size:10px">Note only</span>
                   </div>
                   <div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.4">
-                    Mark this invoice as escrow-protected. The tag is saved in this browser and does not lock funds. To lock funds in the escrow contract, create a milestone escrow on the Escrow page.
+                    Add a note that this invoice is meant to use escrow. The note is saved in this browser and does not lock funds. To lock funds in the escrow contract, create a milestone escrow on the Escrow page.
                   </div>
                 </div>
                 <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;margin-left:14px;cursor:pointer">
@@ -692,7 +711,7 @@
                 </label>
               </div>
               <div id="escrowNotice" style="display:none;margin-top:10px;padding:8px 10px;background:rgba(245,197,24,0.12);border:1px solid rgba(245,197,24,0.25);border-radius:8px;font-size:11px;color:var(--yellow)">
-                Escrow tag on (saved in this browser only). Funds are locked only in an escrow created on the Escrow page. Contract: <a id="inv-escrow-link" href="#" target="_blank" rel="noopener" style="font-family:'JetBrains Mono',monospace;color:var(--yellow)">not set</a>
+                Escrow note on (saved in this browser only). Does not lock any funds. Funds are locked only in an escrow created on the Escrow page.
               </div>
             </div>
 
@@ -958,7 +977,7 @@
             <button class="doc-nav-btn" onclick="showDoc('feat-paylink',this)">Pay Link</button>
             <button class="doc-nav-btn" onclick="showDoc('feat-swap',this)">Swap Tokens</button>
             <button class="doc-nav-btn" onclick="showDoc('feat-bridge',this)">Bridge Assets</button>
-            <button class="doc-nav-btn" onclick="showDoc('feat-recurring',this)">Recurring Payments</button>
+            <button class="doc-nav-btn" onclick="showDoc('feat-recurring',this)">Payment Reminders</button>
             <button class="doc-nav-btn" onclick="showDoc('feat-username',this)">Username Registry</button>
             <button class="doc-nav-btn" onclick="showDoc('feat-ai',this)">AI Assistant</button>
             <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text2);padding:12px 8px 4px;text-transform:uppercase">Reference</div>
@@ -1253,7 +1272,7 @@
                 </div>
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px">
                   <div style="font-size:13px;font-weight:700;margin-bottom:8px">Professional PDF</div>
-                  <div style="font-size:13px;color:var(--text2);line-height:1.8">Click <strong style="color:var(--text)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD PDF</strong> → opens a professional invoice HTML → click <strong style="color:var(--yellow)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</strong> → "Save as PDF". Includes line items, tax field, local currencies, and wallet address.</div>
+                  <div style="font-size:13px;color:var(--text2);line-height:1.8">Click <strong style="color:var(--text)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> DOWNLOAD PDF</strong> → opens a professional invoice HTML → click <strong style="color:var(--yellow)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</strong> → "Save as PDF". Includes local currency amounts and your wallet address. If the description has several lines, each line is listed as an item and the amount is shown split equally across them. There is no tax field.</div>
                 </div>
               </div>
             </div>
@@ -1337,26 +1356,26 @@
 
           <!-- ═══ FEAT: RECURRING ═══ -->
           <div class="doc-section" id="doc-feat-recurring" style="display:none">
-            <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:8px">Recurring Payments</div>
-            <div style="font-size:14px;color:var(--text2);margin-bottom:28px">Schedule automatic stablecoin payments on a weekly or monthly basis.</div>
+            <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:8px">Payment Reminders</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:28px">Save a reminder for a weekly or monthly payment. ArcLance shows the reminder when it is due. It is a reminder, not automatic payment: you send each payment yourself.</div>
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">
               <div style="font-size:14px;font-weight:700;margin-bottom:12px">Use Cases</div>
               <div style="font-size:13px;color:var(--text2);line-height:1.9">
-                • <strong style="color:var(--text)">Monthly retainers</strong> — pay your virtual assistant or employee automatically every 30 days<br>
-                • <strong style="color:var(--text)">Subscription services</strong> — automate payment for a server, tool, or service you use monthly<br>
+                • <strong style="color:var(--text)">Monthly retainers</strong> — get a reminder to pay your assistant or employee every 30 days<br>
+                • <strong style="color:var(--text)">Subscription services</strong> — get a reminder to pay for a server, tool, or service you use monthly<br>
                 • <strong style="color:var(--text)">Installments</strong> — split a large payment into weekly installments<br>
-                • <strong style="color:var(--text)">Team payments</strong> — pay multiple contractors on a fixed schedule
+                • <strong style="color:var(--text)">Team payments</strong> — get a reminder when each contractor is due
               </div>
             </div>
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px">
               <div style="font-size:14px;font-weight:700;margin-bottom:10px">How to Set Up</div>
               <div style="font-size:13px;color:var(--text2);line-height:1.9">
-                Go to <strong style="color:var(--text)">Send & Receive → RECURRING tab</strong><br>
+                Go to <strong style="color:var(--text)">Send & Receive → REMINDERS tab</strong><br>
                 1. Enter recipient wallet address<br>
                 2. Add a label (e.g. "Monthly Server Retainer")<br>
                 3. Set amount and token (USDC / EURC)<br>
                 4. Choose frequency: Weekly (every 7 days) or Monthly (every 30 days)<br>
-                5. Click <strong style="color:var(--yellow)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> SCHEDULE PAYMENT</strong>
+                5. Click <strong style="color:var(--yellow)"><svg class="ui-i" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> SAVE REMINDER</strong>
               </div>
             </div>
           </div>
@@ -1364,7 +1383,7 @@
           <!-- ═══ FEAT: USERNAME ═══ -->
           <div class="doc-section" id="doc-feat-username" style="display:none">
             <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:8px">Username Registry</div>
-            <div style="font-size:14px;color:var(--text2);margin-bottom:28px">Register a human-readable @username on Arc Testnet so clients can pay you by name, not by 0x address.</div>
+            <div style="font-size:14px;color:var(--text2);margin-bottom:28px">Usernames are recorded onchain only when the UsernameRegistry contract is configured for this site. Otherwise the name is a demo saved in this browser only and does not work on other devices.</div>
             <div style="display:flex;flex-direction:column;gap:14px">
               <div style="background:var(--surface);border:1px solid rgba(245,197,24,0.2);border-radius:14px;padding:20px">
                 <div style="font-size:14px;font-weight:700;margin-bottom:10px">Why Register a Username?</div>
@@ -1373,11 +1392,11 @@
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px">
                   <div style="font-size:13px;font-weight:700;margin-bottom:8px">Registration</div>
-                  <div style="font-size:13px;color:var(--text2);line-height:1.8">Go to <strong style="color:var(--text)">Send & Receive → Username tab</strong>, enter a 3–20 character name (lowercase <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">a-z</code>, digits <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">0-9</code>, internal hyphens), and confirm the <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">register(name)</code> transaction in your wallet. Names are <strong style="color:var(--text)">first-come-first-served</strong> (one per wallet, releasable anytime with <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">release()</code>) and <strong style="color:var(--yellow)">testnet-only for now</strong> on Arc Testnet. No protocol fee is charged (only Arc Testnet gas in USDC).</div>
+                  <div style="font-size:13px;color:var(--text2);line-height:1.8">Go to <strong style="color:var(--text)">Send & Receive → Username tab</strong> and enter a 3–20 character name (lowercase <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">a-z</code>, digits <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">0-9</code>, internal hyphens). Usernames are recorded onchain only when the UsernameRegistry contract is configured for this site. Otherwise the name is a demo saved in this browser only and does not work on other devices.</div>
                 </div>
                 <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px">
                   <div style="font-size:13px;font-weight:700;margin-bottom:8px">Using a Username</div>
-                  <div style="font-size:13px;color:var(--text2);line-height:1.8">In the Send form (<strong style="color:var(--text)">@Username</strong> mode), Pay Links (<code style="background:var(--bg3);padding:1px 5px;border-radius:4px">/pay/&lt;name&gt;/...</code>), and invoice links, ArcLance queries <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">UsernameRegistry.resolve(name)</code> on the Arc Testnet RPC and always shows the resolved short address (<code style="background:var(--bg3);padding:1px 5px;border-radius:4px">0x1234...5678</code>) next to the name so the payer can verify it. Unregistered names show <em>Name not registered</em> and block sending.</div>
+                  <div style="font-size:13px;color:var(--text2);line-height:1.8">When the UsernameRegistry contract is configured for this site, ArcLance resolves names via <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">UsernameRegistry.resolve(name)</code> on Arc Testnet and shows the resolved short address (<code style="background:var(--bg3);padding:1px 5px;border-radius:4px">0x1234...5678</code>) next to the name so the payer can verify it. Otherwise, share the wallet-address Pay Link so anyone can open it on any device.</div>
                 </div>
               </div>
             </div>
@@ -1510,7 +1529,7 @@
               <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">Swap vs Bridge — what's the difference?</div><div style="font-size:13px;color:var(--text2);line-height:1.7"><strong style="color:var(--text)">Swap</strong> = exchange token A for token B on the same chain (USDC → EURC on Arc). <strong style="color:var(--text)">Bridge</strong> = move token across chains (USDC from Arc → Ethereum).</div></div>
               <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">Can ArcLance freeze my funds?</div><div style="font-size:13px;color:var(--text2);line-height:1.7">ArcLance never holds your funds and cannot freeze them. USDC itself is issued by Circle, which can blacklist addresses under its own policies.</div></div>
               <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">Is my wallet address public?</div><div style="font-size:13px;color:var(--text2);line-height:1.7">Yes — all blockchain transactions are publicly viewable on the block explorer (testnet.arcscan.app). This is normal for blockchains. Your name is not attached to your address unless you voluntarily share both.</div></div>
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">How does the on-chain @username registry work?</div><div style="font-size:13px;color:var(--text2);line-height:1.7">Usernames are recorded on-chain in the <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">UsernameRegistry</code> contract on Arc Testnet (testnet-only for now). Registration is <strong style="color:var(--text)">first-come-first-served</strong> with one name per wallet (3–20 lowercase letters, digits, or internal hyphens; reserved protocol names cannot be claimed), and the owner can call <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">release()</code> at any time. The Send form, Pay Links, and invoice links resolve names on-chain via <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">resolve(name)</code> and display the resolved short address next to the name so payers can verify it before sending.</div></div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px"><div style="font-size:14px;font-weight:700;margin-bottom:8px">How do @usernames work?</div><div style="font-size:13px;color:var(--text2);line-height:1.7">Usernames are recorded onchain only when the UsernameRegistry contract is configured for this site. Otherwise the name is a demo saved in this browser only and does not work on other devices.</div></div>
             </div>
           </div>
 

@@ -251,7 +251,7 @@ const pageHead = (title) => `<div class="section-header"><div class="section-tit
 
 function notDeployed() {
   return `<div class="card animate" style="max-width:640px;margin:0 auto;width:100%">${pageHead('P2P')}
-  <div style="text-align:center;padding:28px 10px"><div style="font-size:15px;font-weight:700;margin-bottom:8px">${NOT_DEPLOYED_MESSAGE}</div>
+  <div style="text-align:center;padding:28px 10px"><div style="font-size:15px;font-weight:700;margin-bottom:8px">Not available yet on this network</div>
   <div style="font-size:12px;color:var(--text2);line-height:1.7">Sell USDC for local money or buy it from others. The seller's USDC is locked in a contract until the seller confirms, the order is cancelled or expires, or the arbiter rules on a dispute. The contract is not live yet, so there is nothing to show.</div></div></div>`;
 }
 

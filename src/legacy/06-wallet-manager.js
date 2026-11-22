@@ -350,7 +350,7 @@ const WalletManager = (() => {
         warnEl.style.display = anyDetected ? 'none' : 'flex';
         warnEl.innerHTML = `
           <span>💡</span>
-          <span>No wallet extension detected. Install <a href="https://metamask.io" target="_blank" style="color:var(--yellow);font-weight:700">MetaMask</a>, <a href="https://rabby.io" target="_blank" style="color:var(--yellow);font-weight:700">Rabby</a>, or <a href="https://okx.com/web3" target="_blank" style="color:var(--yellow);font-weight:700">OKX Wallet</a> then refresh.</span>
+          <span>No wallet detected in this browser. On a phone, open ArcLance inside your wallet app (MetaMask, OKX, Trust or Coinbase Wallet) and tap Connect Wallet there. On a computer, install MetaMask, Rabby or OKX Wallet, then refresh.</span>
         `;
       }
     }

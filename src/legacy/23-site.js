@@ -78,15 +78,6 @@ function renderRateNotes() {
   });
 }
 
-// ── Real contract link in the invoice escrow notice ──
-function fillEscrowLink() {
-  const a = $('inv-escrow-link'); if (!a) return;
-  if (!ESCROW_ADDRESS) { a.textContent = 'Testnet: not deployed yet'; a.removeAttribute('href'); return; }
-  a.href = `${SITE.arcscan}/address/${ESCROW_ADDRESS}`;
-  a.textContent = shortAddress(ESCROW_ADDRESS);
-  a.title = ESCROW_ADDRESS;
-}
-
 // ── Send: validate the recipient, then show a summary before the wallet is asked to sign ──
 function validateRecipient(address) {
   const a = String(address || '').trim();
@@ -157,7 +148,7 @@ function trackTxToast(hash, label = 'Transaction', opts = {}) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initBanner(); initFooter(); fillEscrowLink(); renderRateNotes();
+  initBanner(); initFooter(); renderRateNotes();
   const btn = $('wrongNetBtn'); if (btn) btn.addEventListener('click', switchToArcNow);
   setInterval(updateNetworkNotice, 1500);
   setInterval(() => { if (typeof fetchLiveExchangeRates === 'function') fetchLiveExchangeRates(); }, 10 * 60 * 1000);

@@ -20,18 +20,6 @@ export const TEXT_PATCHES = [
   ['~15 min', 'Varies by route'],
   ['CCTP attestation process — significantly faster than legacy bridges', 'Transfer time varies by route. Follow the explorer links on the Bridge page for the status.'],
   ['(one-time setup, ~15 minutes)', '(one-time setup)'],
-  // ── Recurring payments: reminders only ──
-  ['Schedule automatic or recurring stablecoin payments on Arc Network.', 'Save reminders for recurring payments. A reminder only: ArcLance does not send payments automatically.'],
-  ['SCHEDULE PAYMENT', 'SAVE REMINDER'],
-  ['Scheduled Payments', 'Saved Reminders'],
-  ['No recurring payments scheduled yet', 'No reminders saved yet'],
-  ['RECURRING', 'REMINDERS'],
-  ['Recurring Payments', 'Payment Reminders'],
-  ['Schedule automatic stablecoin payments on a weekly or monthly basis.', 'Save a reminder for a weekly or monthly payment. ArcLance shows the reminder when it is due. It is a reminder, not automatic payment: you send each payment yourself.'],
-  ['— pay your virtual assistant or employee automatically every 30 days', '— get a reminder to pay your assistant or employee every 30 days'],
-  ['— pay multiple contractors on a fixed schedule', '— get a reminder when each contractor is due'],
-  // ── Invoice PDF docs: what the form really has ──
-  ['Includes line items, tax field, local currencies, and wallet address.', 'Includes local currency amounts and your wallet address. If the description has several lines, each line is listed as an item and the amount is shown split equally across them. There is no tax field.'],
   // ── Cash-out text ──
   ['Rules on crypto differ by country. Check your local regulations. This is not financial advice.', 'Rules, taxes and legality of crypto and of cashing out depend on your country and can change. Check your local rules and ask a qualified adviser. This is not legal, tax or financial advice.'],
   // ── Escrow tag ──
