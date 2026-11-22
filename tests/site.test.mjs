@@ -57,7 +57,7 @@ test('flags stay next to local-currency labels', () => {
 
 test('hero, cards and docs use the agreed wording', () => {
   assert.match(rawHtml, /Get paid in USDC\.<br><span[^>]*>Settled in seconds\.<\/span>/);
-  assert.ok(rawHtml.includes("Fast payouts, low fees, and no bank or KYC friction. If you have a wallet, you can get paid."));
+  assert.ok(rawHtml.includes("Fast payouts, low fees, and no bank account needed to receive USDC."));
   assert.ok(rawHtml.includes('ArcLance never holds your funds. Note that USDC itself is issued by Circle and can be blacklisted by the issuer.'));
   assert.ok(rawHtml.includes('reserves are attested by independent accountants') || rawHtml.includes('Reserves are attested by independent accountants'));
   const fast = rawHtml.slice(rawHtml.indexOf('Fast Settlement'), rawHtml.indexOf('Fast Settlement') + 400);
@@ -294,17 +294,14 @@ test('the simulated Buy USDC by card and Pay from Any Chain flows are gone', asy
   assert.ok(!fs.existsSync(path.join(ROOT, 'src/legacy/99-cross-chain-onramp.js')));
 });
 
-test('escrow contract not set: the notice says "Testnet: not deployed yet"', async () => {
+test('invoice escrow note has no contract link and says it does not lock funds', async () => {
   const t = await mount({ useBundle: bundleNoEscrow });
-  const a = t.D.getElementById('inv-escrow-link');
-  assert.equal(a.textContent.trim(), 'Testnet: not deployed yet');
-  assert.equal(a.getAttribute('href'), null);
+  assert.equal(t.D.getElementById('inv-escrow-link'), null);
+  assert.match(t.text('#escrowNotice'), /does not lock any funds/i);
 });
 
-test('invoice escrow notice links the real contract on Arcscan; pay link text uses the one format', async () => {
+test('invoice escrow note; pay link text uses the one format', async () => {
   const t = await mount();
-  const a = t.D.getElementById('inv-escrow-link');
-  assert.equal(a.getAttribute('href'), `https://testnet.arcscan.app/address/${ESCROW}`);
   assert.match(t.text('#escrowNotice'), /saved in this browser only/i);
   t.D.getElementById('pl-wallet').value = ME; t.D.getElementById('pl-amount').value = '40'; t.D.getElementById('pl-service').value = 'Logo design';
   t.W.updatePayLinkMain?.(); t.D.getElementById('pl-amount').dispatchEvent(new t.W.Event('input', { bubbles: true }));
@@ -896,4 +893,32 @@ test('P2P action-needed count logic: seller with Paid order and buyer with unexp
   assert.equal(t.W.ALP2P.actionCount(orders, '0x1111111111111111111111111111111111111111'), 0);
   assert.equal(t.W.ALP2P.actionCount([], ME), 0);
   assert.equal(t.W.ALP2P.actionCount(null, ME), 0);
+});
+
+test('home guest view: 3-step block when disconnected, stat cards when connected, and Create your payment link opens Pay Link', async () => {
+  const t = await mount();
+  const guest = t.D.getElementById('home-guest-steps');
+  const stats = t.D.getElementById('home-stat-cards');
+  const portfolio = t.D.getElementById('home-portfolio-card');
+  const multi = t.D.getElementById('multiChainBalanceCard');
+  assert.notEqual(guest.style.display, 'none', 'guest 3-step block visible before connect');
+  assert.equal(stats.style.display, 'none', 'stat cards hidden before connect');
+  assert.equal(portfolio.style.display, 'none', 'portfolio card hidden before connect');
+  assert.equal(multi.style.display, 'none', 'multi-chain card hidden before connect');
+
+  await t.connect();
+  assert.equal(guest.style.display, 'none', 'guest 3-step block hidden after connect');
+  assert.notEqual(stats.style.display, 'none', 'stat cards visible after connect');
+  assert.notEqual(portfolio.style.display, 'none', 'portfolio card visible after connect');
+  assert.notEqual(multi.style.display, 'none', 'multi-chain card visible after connect');
+
+  t.W.WalletManager.disconnect();
+  assert.notEqual(guest.style.display, 'none', 'guest 3-step block visible again after disconnect');
+  assert.equal(stats.style.display, 'none', 'stat cards hidden again after disconnect');
+
+  const btn = guest.querySelector('button');
+  assert.equal(btn.textContent.trim(), 'Create your payment link');
+  btn.click();
+  assert.ok(t.D.getElementById('page-paylink').classList.contains('active'), 'Pay Link page becomes active');
+  assert.ok(t.D.querySelector('.nav-item[onclick*=paylink]').classList.contains('active'), 'Pay Link nav item is highlighted');
 });

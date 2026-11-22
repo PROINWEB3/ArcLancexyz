@@ -133,7 +133,7 @@ async function createEscrowFlow() {
 function notDeployed() {
   return `<div class="card animate" style="max-width:640px;margin:0 auto;width:100%">
     <div class="section-header"><div class="section-title">Milestone Escrow</div><span class="badge badge-yellow">Arc Testnet</span></div>
-    <div style="text-align:center;padding:28px 10px"><div style="font-size:15px;font-weight:700;margin-bottom:8px">${NOT_DEPLOYED_MESSAGE}</div>
+    <div style="text-align:center;padding:28px 10px"><div style="font-size:15px;font-weight:700;margin-bottom:8px">Not available yet on this network</div>
     <div style="font-size:12px;color:var(--text2);line-height:1.7">Pay freelancers milestone by milestone, with the money held in a contract until you approve and release it. The escrow contract is not live yet, so there is nothing to show.</div></div></div>`;
 }
 
