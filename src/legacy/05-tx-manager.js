@@ -256,19 +256,19 @@ const TxManager = (() => {
         await onPayRecipientInput(recipient);
         const res = await resolveNameOnChain(recipient);
         if (!res.ok || !res.address) {
-          showToast('Name not registered');
+          showToast('Unknown username. Enter a 0x wallet address or a registered username.');
           return;
         }
         recipient = res.address;
       }
     } else {
       // Demo fallback when VITE_USERNAME_REGISTRY_ADDRESS is empty
-      if (recipient.startsWith('@') || (!recipient.startsWith('0x') && typeof resolveUsername === 'function' && resolveUsername(recipient))) {
-        const resolved = resolveUsername(recipient);
+      if (recipient && (isUsernameMode || recipient.startsWith('@') || !recipient.startsWith('0x'))) {
+        const resolved = typeof resolveUsername === 'function' ? resolveUsername(recipient) : null;
         if (resolved) {
           recipient = resolved;
         } else {
-          showToast('Username not found in Arc registry');
+          showToast('Unknown username. Enter a 0x wallet address or a registered username.');
           return;
         }
       }

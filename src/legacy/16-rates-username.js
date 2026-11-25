@@ -254,15 +254,8 @@ function resolveUsername(username) {
   // Local storage custom usernames registry
   const registry = JSON.parse(localStorage.getItem('arclance_usernames') || '{}');
   if (registry[clean]) return registry[clean];
-  
-  // Default seeded custom registry mappings
-  const defaults = {
-    'alice': '0x742d35Cc6634C0532925a3b84c157224f285890',
-    'bob': '0x0000000000000000000000000000000000000002',
-    'clara': '0x2222222222222222222222222222222222222222',
-    'ali-hassan': '0x5D448c58253CDD8C84318c5e63E7c963286F634A'
-  };
-  return defaults[clean] || null;
+
+  return null;
 }
 
 // 3. Register Username (on-chain when VITE_USERNAME_REGISTRY_ADDRESS is set; browser demo fallback when empty)

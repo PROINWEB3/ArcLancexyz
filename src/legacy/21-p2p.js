@@ -196,6 +196,7 @@ async function ensureAllowance(amount, step) {
 
 function createAdFlow() {
   const f = p.form; const errs = [];
+  if (f.side === 1) { setMsg('Buy ads are not available in this testnet demo yet', 'info'); return; }
   const amount = toUnits(f.amount, 6); const price = toUnits(f.price, 6); const min = toUnits(f.min, 6); const max = toUnits(f.max, 6);
   if (!(amount > 0n)) errs.push('Enter the USDC amount.');
   if (!(price > 0n)) errs.push('Enter your price per USDC.');
@@ -220,6 +221,7 @@ function createAdFlow() {
 
 function takeOrderFlow() {
   const ad = p.takeAd; const amount = toUnits(p.takeAmount, 6);
+  if (!ad || ad.side === 1) { setMsg('Buy ads are not available in this testnet demo yet', 'info'); return; }
   if (!(amount > 0n) || amount < ad.minLimit || amount > ad.maxLimit || amount > ad.remaining) { setMsg(`Enter an amount between ${fromUnits(ad.minLimit, 6)} and ${fromUnits(ad.maxLimit < ad.remaining ? ad.maxLimit : ad.remaining, 6)} USDC.`, 'error'); return; }
   const amtFormatted = fromUnits(amount, 6, 2);
   const confirmMsg = ad.side === 1
@@ -268,7 +270,8 @@ function marketHtml() {
   const cur = P2P_COUNTRIES.map((c) => `<button type="button" class="slip-btn ${p.country === c.code ? 'active' : ''}" data-p-country="${c.code}">${c.name} (${c.currency})</button>`).join('');
   const meth = `<select class="form-select" data-p-method style="max-width:220px"><option value="0">All ${esc(country.name)} methods</option>${country.methods.map((m, i) => `<option value="${methodBit(i)}" ${p.method === methodBit(i) ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>`;
   let body;
-  if (p.loading) body = loadingState('Loading ads…');
+  if (p.side === 'sell') body = emptyState('Buy ads are not available in this testnet demo yet');
+  else if (p.loading) body = loadingState('Loading ads…');
   else if (p.adsErr) body = errorState(p.adsErr, 'window.ALP2P.reload()');
   else if (!p.ads) body = loadingState();
   else {
@@ -326,7 +329,7 @@ function createHtml() {
   const methods = country.methods.map((m, i) => `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)"><input type="checkbox" data-p-fm="${methodBit(i)}" ${f.methods & methodBit(i) ? 'checked' : ''}> ${methodIcon(m, 16)} ${esc(m)}</label>`).join('');
   const field = (label, key, ph, extra = '') => `<div class="form-group"><label class="form-label">${label}</label><input class="form-input" data-p-ff="${key}" placeholder="${ph}" inputmode="decimal" value="${esc(f[key])}" ${extra}></div>`;
   return `${tabsHtml()}
-    <div class="form-group"><label class="form-label">I want to</label><div class="slip-btns"><button type="button" class="slip-btn ${f.side === 0 ? 'active' : ''}" data-p-fside="0">Sell USDC</button><button type="button" class="slip-btn ${f.side === 1 ? 'active' : ''}" data-p-fside="1">Buy USDC</button></div></div>
+    <div class="form-group"><label class="form-label">I want to</label><div class="slip-btns"><button type="button" class="slip-btn ${f.side === 0 ? 'active' : ''}" data-p-fside="0">Sell USDC</button><button type="button" class="slip-btn" data-p-fside="1" disabled style="opacity:0.5;cursor:not-allowed">Buy USDC</button></div><div style="font-size:11px;color:var(--text2);margin-top:6px">Buy ads are not available in this testnet demo yet</div></div>
     <div class="form-group"><label class="form-label">Country</label><div class="slip-btns">${P2P_COUNTRIES.map((c) => `<button type="button" class="slip-btn ${f.country === c.code ? 'active' : ''}" data-p-fcountry="${c.code}">${c.name} (${c.currency})</button>`).join('')}</div><div style="font-size:11px;color:var(--text2);margin-top:6px">${rateHtml(country.currency)}</div></div>
     ${field('Amount (USDC)', 'amount', '100')}${field(`Price per USDC (${country.currency})`, 'price', '280')}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${field('Minimum order (USDC)', 'min', '10')}${field('Maximum order (USDC)', 'max', '100')}</div>
@@ -394,7 +397,7 @@ function bind() {
     if (d.pTab) { p.tab = d.pTab; p.msg = ''; p.lastTx = ''; p.takeAd = null; render(); if (p.tab === 'market') loadAds(); if (p.tab === 'orders') loadOrders(); loadRates(); }
     else if (d.pSide) { p.side = d.pSide; render(); }
     else if (d.pCountry) { p.country = d.pCountry; p.method = 0; render(); }
-    else if (d.pTake) { if (!WalletState.connected()) { WalletManager.openModal(); return; } p.takeAd = p.ads.find((a) => a.id === d.pTake); p.takeAmount = ''; p.msg = ''; render(); }
+    else if (d.pTake) { if (!WalletState.connected()) { WalletManager.openModal(); return; } const ad = p.ads.find((a) => a.id === d.pTake); if (!ad || ad.side === 1) { setMsg('Buy ads are not available in this testnet demo yet', 'info'); return; } p.takeAd = ad; p.takeAmount = ''; p.msg = ''; render(); }
     else if (d.pCanceltake) { p.takeAd = null; render(); }
     else if (d.pCancelad) {
       if (typeof window.confirm === 'function' && !window.confirm('This cancels your ad and returns any remaining USDC locked in it to your wallet.')) return;
@@ -402,7 +405,7 @@ function bind() {
     }
     else if (d.pConfirmtake) takeOrderFlow();
     else if (d.pOpen) openOrder(d.pOpen);
-    else if (d.pFside) { p.form.side = Number(d.pFside); render(); }
+    else if (d.pFside) { if (Number(d.pFside) === 1) { setMsg('Buy ads are not available in this testnet demo yet', 'info'); return; } p.form.side = Number(d.pFside); render(); }
     else if (d.pFcountry) { p.form.country = d.pFcountry; p.form.methods = 1; render(); }
     else if (d.pFwin) { p.form.window = d.pFwin; render(); }
     else if (d.pPublish) { if (!WalletState.connected()) WalletManager.openModal(); else createAdFlow(); }
